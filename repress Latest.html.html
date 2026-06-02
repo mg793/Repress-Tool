@@ -1,0 +1,2554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Repress</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --page: #f7f5f2;
+  --card: #fff;
+  --border1: #ebe6e0;
+  --border2: #d4cec5;
+  --ink: #1c1917;
+  --ink2: #44403c;
+  --ink3: #78716c;
+  --accent: #d97757;
+  --accent2: #c46647;
+  --accent3: #fce9df;
+  --ok: #16a34a;
+  --ok-bg: #ecfdf5;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --warn: #d97706;
+  --warn-bg: #fffbeb;
+  --watch-bg: #fff4ed;
+  --muted-bg: #f5f5f4;
+  --info-bg: #eff6ff;
+  --info: #2563eb;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--page); }
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+.num { font-variant-numeric: tabular-nums; }
+.right { text-align: right; }
+.strong { font-weight: 700; }
+.accent { color: var(--accent); }
+.ink2 { color: var(--ink2); }
+.ink3 { color: var(--ink3); }
+.pos { color: var(--ok); }
+.neg { color: var(--danger); }
+.caps { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink3); }
+.hidden { display: none !important; }
+button { font: inherit; cursor: pointer; }
+input, select { font: inherit; }
+::selection { background: var(--accent3); color: var(--ink); }
+
+/* HEADER */
+header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border1);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: sticky; top: 0; z-index: 50;
+}
+.logo {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 18px;
+  cursor: pointer;
+}
+h1 { font-size: 18px; font-weight: 700; flex: 1; }
+.back-btn {
+  background: var(--card); border: 1px solid var(--border1);
+  border-radius: 8px; padding: 7px 14px;
+  font-weight: 600; font-size: 13px; color: var(--ink2);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.back-btn:hover { background: var(--page); }
+.top-nav { display: flex; gap: 4px; }
+.nav-btn {
+  background: none; border: 1px solid transparent;
+  padding: 8px 16px; border-radius: 8px;
+  font-weight: 600; font-size: 13px; color: var(--ink3);
+}
+.nav-btn:hover { background: var(--page); color: var(--ink2); }
+.nav-btn.active { background: var(--accent3); color: var(--accent2); border-color: var(--accent); }
+
+main { max-width: 1300px; margin: 0 auto; padding: 24px; }
+
+/* ============ WATCHLIST VIEW ============ */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat { background: var(--card); border: 1px solid var(--border1); border-radius: 12px; padding: 14px 16px; }
+.stat-label { font-size: 12px; color: var(--ink3); font-weight: 500; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.stat-value { font-size: 22px; font-weight: 700; color: var(--ink); }
+.stat.critical .stat-value { color: var(--danger); }
+.stat.warning .stat-value { color: var(--warn); }
+.stat.watch .stat-value { color: var(--accent); }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border1); margin-bottom: 16px; }
+.tab {
+  background: none; border: none; padding: 10px 18px;
+  font-size: 14px; font-weight: 600; color: var(--ink3);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: all 0.15s;
+}
+.tab:hover { color: var(--ink2); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-count {
+  display: inline-block; background: var(--muted-bg); color: var(--ink2);
+  padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; margin-left: 6px;
+}
+.tab.active .tab-count { background: var(--watch-bg); color: var(--accent); }
+
+.toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.toolbar input[type="text"], .toolbar select {
+  font-size: 13px; padding: 8px 12px;
+  border: 1px solid var(--border1); border-radius: 8px;
+  background: var(--card); color: var(--ink); outline: none; transition: border 0.15s;
+}
+.toolbar input[type="text"]:focus, .toolbar select:focus { border-color: var(--accent); }
+.toolbar input[type="text"] { flex: 1; min-width: 200px; }
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+.wl-row {
+  background: var(--card); border: 1px solid var(--border1); border-radius: 12px;
+  padding: 14px 18px;
+  display: grid; grid-template-columns: 110px 1fr auto; gap: 16px;
+  align-items: center; transition: all 0.15s; cursor: pointer;
+}
+.wl-row:hover { border-color: var(--border2); background: #fafaf8; }
+.wl-row.removing { opacity: 0.3; pointer-events: none; }
+
+.tier-badge {
+  padding: 4px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  text-align: center; width: fit-content;
+}
+.tier-badge.critical { background: var(--danger-bg); color: var(--danger); }
+.tier-badge.warning { background: var(--warn-bg); color: var(--warn); }
+.tier-badge.watch { background: var(--watch-bg); color: var(--accent); }
+
+.row-main { display: flex; flex-direction: column; gap: 4px; }
+.row-header { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.catalog-nr { font-size: 16px; font-weight: 700; }
+.label-code { font-size: 12px; color: var(--ink3); font-weight: 600; padding: 2px 8px; background: var(--page); border-radius: 6px; }
+.age-chip { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+.age-chip.recent { background: var(--ok-bg); color: var(--ok); }
+.age-chip.aged { background: var(--muted-bg); color: var(--ink3); }
+
+.row-stats { display: flex; gap: 18px; font-size: 13px; color: var(--ink2); flex-wrap: wrap; }
+.row-stats strong { color: var(--ink); font-weight: 600; }
+
+.actions { display: flex; gap: 6px; }
+.btn {
+  font-size: 13px; font-weight: 600; padding: 8px 12px;
+  border-radius: 8px; border: 1px solid var(--border1);
+  background: var(--card); color: var(--ink2);
+  transition: all 0.15s; white-space: nowrap;
+}
+.btn:hover { background: var(--page); border-color: var(--border2); }
+.btn-hot { color: var(--danger); border-color: var(--danger-bg); }
+.btn-hot:hover { background: var(--danger-bg); }
+.btn-mute { color: var(--ink3); }
+.btn-inspect { color: var(--accent); border-color: var(--watch-bg); }
+.btn-inspect:hover { background: var(--watch-bg); }
+
+.empty { text-align: center; padding: 60px 20px; color: var(--ink3); font-size: 14px; }
+.empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+
+.load-more {
+  display: block; margin: 20px auto;
+  padding: 10px 24px; background: var(--card);
+  border: 1px solid var(--border1); border-radius: 8px;
+  font-size: 13px; font-weight: 600; color: var(--ink2);
+}
+.load-more:hover { background: var(--page); border-color: var(--border2); }
+
+/* ============ INSPECTOR VIEW ============ */
+.catalog-header {
+  background: var(--card); border: 1px solid var(--border1);
+  border-radius: 16px; padding: 20px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.catalog-title { font-weight: 700; font-size: 28px; letter-spacing: -0.02em; margin-top: 4px; }
+.meta-row { display: flex; gap: 28px; text-align: right; flex-wrap: wrap; }
+.meta-val { font-size: 13px; font-weight: 700; margin-top: 4px; }
+.meta-sub { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+/* Variant banner */
+.variant-banner {
+  background: var(--info-bg); border: 1px solid #bfdbfe;
+  border-radius: 14px; padding: 18px 22px; margin-bottom: 16px;
+}
+.variant-banner h3 { font-size: 15px; font-weight: 700; color: var(--info); margin-bottom: 6px; }
+.variant-banner p { font-size: 13px; color: var(--ink2); margin-bottom: 14px; }
+.variant-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.variant-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px; background: #fff; border: 1px solid #bfdbfe; border-radius: 999px;
+  font-size: 13px; font-weight: 600;
+}
+.variant-pill input { margin: 0; cursor: pointer; }
+.variant-pill label { cursor: pointer; }
+.variant-actions { display: flex; gap: 8px; }
+.btn-merge { background: var(--info); color: #fff; border: 1px solid var(--info); border-radius: 8px; padding: 8px 16px; font-weight: 600; font-size: 13px; }
+.btn-merge:hover { background: #1d4ed8; }
+.btn-decline { background: #fff; color: var(--ink2); border: 1px solid var(--border1); border-radius: 8px; padding: 8px 16px; font-weight: 600; font-size: 13px; }
+.btn-decline:hover { background: var(--page); }
+
+.merge-active-banner {
+  background: var(--accent3); border: 1px solid var(--accent);
+  border-radius: 14px; padding: 14px 22px; margin-bottom: 16px;
+  font-size: 13px; color: var(--ink2);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+.merge-active-banner strong { color: var(--accent2); }
+
+.metric { background: var(--card); border: 1px solid var(--border1); border-radius: 16px; overflow: hidden; margin-bottom: 12px; }
+.metric > summary {
+  list-style: none; cursor: pointer; padding: 20px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; transition: background 0.15s;
+}
+.metric > summary::-webkit-details-marker, .metric > summary::marker { display: none; }
+.metric > summary:hover { background: rgba(245, 240, 232, 0.5); }
+.big-num { font-weight: 700; font-size: 38px; margin-top: 4px; line-height: 1; }
+.big-num.accent { color: var(--accent); }
+.big-num-secondary { font-weight: 600; font-size: 20px; margin-top: 8px; color: var(--ink2); }
+.big-num-secondary strong { font-weight: 700; color: var(--ink); }
+.sub { font-size: 13px; color: var(--ink2); margin-top: 8px; }
+.chev { font-size: 24px; color: var(--ink3); transition: transform 0.2s; line-height: 1; flex-shrink: 0; }
+details[open] > summary > .chev { transform: rotate(90deg); }
+.metric-content { border-top: 1px solid var(--border1); }
+
+.context-banner { padding: 14px 24px; background: var(--accent3); border-bottom: 1px solid var(--border1); font-size: 13px; }
+.context-banner strong { color: var(--accent); }
+
+.tbl-head { display: grid; gap: 16px; padding: 12px 24px; background: rgba(245, 240, 232, 0.5); border-bottom: 1px solid var(--border1); }
+.tbl-head > div { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink3); }
+.tbl-row { display: grid; gap: 16px; padding: 12px 24px; border-bottom: 1px solid var(--border1); align-items: center; }
+.tbl-row:hover { background: rgba(245, 240, 232, 0.3); }
+.tbl-total { display: grid; gap: 16px; padding: 12px 24px; background: rgba(245, 240, 232, 0.5); border-top: 2px solid var(--border2); font-weight: 700; align-items: center; }
+.grid-3 { grid-template-columns: 1fr 140px 140px; }
+
+.month-row { border-bottom: 1px solid var(--border1); }
+.month-row:last-child { border-bottom: none; }
+.month-row > summary {
+  list-style: none; cursor: pointer;
+  display: grid; grid-template-columns: 1fr 140px 140px;
+  gap: 16px; align-items: center; padding: 12px 24px; transition: background 0.15s;
+}
+.month-row > summary::-webkit-details-marker, .month-row > summary::marker { display: none; }
+.month-row > summary:hover { background: rgba(245, 240, 232, 0.4); }
+.month-row > summary .chev { font-size: 16px; }
+
+.customer-list { background: rgba(245, 240, 232, 0.35); border-top: 1px solid rgba(235, 230, 224, 0.6); }
+.customer-head { display: grid; grid-template-columns: 1fr 120px 120px; gap: 16px; padding: 10px 24px 10px 48px; border-bottom: 1px solid rgba(235, 230, 224, 0.6); }
+.customer-head > div { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink3); }
+.customer-row { border-bottom: 1px solid rgba(235, 230, 224, 0.4); }
+.customer-row:last-child { border-bottom: none; }
+.customer-row > summary {
+  list-style: none; cursor: pointer;
+  display: grid; grid-template-columns: 1fr 120px 120px;
+  gap: 16px; align-items: center; padding: 8px 24px 8px 48px;
+}
+.customer-row > summary::-webkit-details-marker, .customer-row > summary::marker { display: none; }
+.customer-row > summary:hover { background: rgba(255,255,255,0.5); }
+.customer-row > summary .chev { font-size: 14px; }
+.txn-list { background: rgba(255,255,255,0.6); padding: 8px 0; }
+.txn-line { display: grid; grid-template-columns: 120px 100px 1fr 80px; gap: 16px; padding: 5px 24px 5px 80px; font-size: 12px; align-items: center; }
+
+.inspector-search {
+  display: flex; gap: 8px; margin-bottom: 16px;
+}
+.inspector-search input {
+  flex: 1; background: var(--card); border: 1px solid var(--border1);
+  border-radius: 10px; padding: 9px 14px; font-weight: 500;
+}
+.inspector-search button {
+  background: var(--accent); color: #fff; border: none;
+  border-radius: 10px; padding: 9px 18px; font-weight: 600;
+}
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink); color: #fff;
+  padding: 10px 18px; border-radius: 999px;
+  font-size: 13px; font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s; z-index: 100;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+/* Returns */
+#returns-dropzone:hover { border-color: var(--accent); background: var(--accent3); }
+#returns-dropzone.dragging { border-color: var(--accent); background: var(--accent3); }
+.returns-row {
+  background: var(--card); border: 1px solid var(--border1);
+  border-radius: 10px; padding: 14px 16px;
+  display: grid; gap: 12px; align-items: center;
+  margin-bottom: 6px;
+  grid-template-columns: 28px 1fr 90px 90px 200px;
+}
+.returns-row.ok { border-left: 3px solid var(--ok); }
+.returns-row.warn { border-left: 3px solid var(--warn); }
+.returns-row.fail { border-left: 3px solid var(--danger); }
+.returns-icon { font-size: 18px; text-align: center; }
+.returns-cat { font-size: 14px; font-weight: 700; }
+.returns-meta { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+.returns-num { font-size: 14px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.returns-status { font-size: 12px; font-weight: 500; line-height: 1.4; }
+.returns-status.ok { color: var(--ok); }
+.returns-status.warn { color: var(--warn); }
+.returns-status.fail { color: var(--danger); }
+
+.loading-state { color: var(--ink3); text-align: center; padding: 40px; }
+
+/* Reports */
+.period-btn {
+  background: var(--card); border: 1px solid var(--border1);
+  padding: 8px 14px; border-radius: 8px;
+  font-weight: 600; font-size: 13px; color: var(--ink2);
+}
+.period-btn:hover { background: var(--page); border-color: var(--border2); }
+.period-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.report-row {
+  background: var(--card); border: 1px solid var(--border1);
+  border-radius: 10px; padding: 12px 16px;
+  display: grid; gap: 16px; align-items: center;
+  margin-bottom: 6px;
+}
+.report-row .period-label { font-weight: 700; font-size: 14px; }
+.report-row .period-sub { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+.report-row .num-cell { font-size: 16px; font-weight: 700; }
+.report-row .num-sub { font-size: 11px; color: var(--ink3); font-weight: 500; }
+.report-bar {
+  height: 4px; background: var(--border1); border-radius: 2px; margin-top: 6px; overflow: hidden;
+}
+.report-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+}
+.modal {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 620px; width: 92%;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.modal h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.modal-subtitle { font-size: 13px; color: var(--ink3); margin-bottom: 18px; }
+.modal-body { margin-bottom: 20px; }
+.modal-body label { display: block; font-size: 11px; color: var(--ink3); margin-bottom: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.modal-body input, .modal-body textarea {
+  width: 100%; padding: 10px 12px;
+  border: 1px solid var(--border1); border-radius: 8px;
+  font: inherit; margin-bottom: 14px;
+  background: var(--page);
+}
+.modal-body input:focus, .modal-body textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+.modal-body textarea { resize: vertical; min-height: 60px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Workflow primary action button */
+.btn-primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn-approve { background: var(--ok); color: #fff; border: 1px solid var(--ok); }
+.btn-approve:hover { background: #15803d; border-color: #15803d; }
+.btn-confirm { background: var(--info); color: #fff; border: 1px solid var(--info); }
+.btn-confirm:hover { background: #1d4ed8; border-color: #1d4ed8; }
+.btn-cancel { color: var(--ink3); padding: 7px 10px; }
+.btn-cancel:hover { color: var(--danger); border-color: var(--danger-bg); background: var(--danger-bg); }
+
+/* Status meta line on workflow rows */
+.row-status-meta {
+  font-size: 12px; color: var(--ink2);
+  padding: 6px 10px; background: var(--page); border-radius: 6px;
+  display: inline-block; margin-top: 4px;
+}
+.row-status-meta.req { color: var(--info); background: var(--info-bg); }
+.row-status-meta.ok { color: var(--ok); background: var(--ok-bg); }
+.row-status-meta.warn { color: var(--accent2); background: var(--accent3); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" id="logo-home">R</div>
+  <h1 id="page-title">Repress Watchlist</h1>
+  <button class="back-btn hidden" id="back-btn">← Back</button>
+  <nav class="top-nav">
+    <button class="nav-btn active" data-view="watchlist">Watchlist</button>
+    <button class="nav-btn" data-view="reports">Reports</button>
+    <button class="nav-btn" data-view="returns">Returns</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============ WATCHLIST VIEW ============ -->
+<section id="watchlist-view">
+  <div class="stats">
+    <div class="stat"><div class="stat-label">First Notice</div><div class="stat-value" id="stat-firstnotice">—</div></div>
+    <div class="stat critical"><div class="stat-label">Take Action</div><div class="stat-value" id="stat-takeaction">—</div></div>
+    <div class="stat warning"><div class="stat-label">Planned</div><div class="stat-value" id="stat-planned">—</div></div>
+    <div class="stat watch"><div class="stat-label">In Workflow</div><div class="stat-value" id="stat-workflow">—</div></div>
+  </div>
+
+  <div class="tabs" id="tabs-container">
+    <button class="tab active" data-tab="firstnotice">⚡ First Notice <span class="tab-count" id="cnt-firstnotice">0</span></button>
+    <button class="tab" data-tab="takeaction">🎯 Take Action <span class="tab-count" id="cnt-takeaction">0</span></button>
+    <button class="tab" data-tab="planned">📅 Planned <span class="tab-count" id="cnt-planned">0</span></button>
+    <button class="tab" data-tab="requested">✉️ Requested <span class="tab-count" id="cnt-requested">0</span></button>
+    <button class="tab" data-tab="approved">✅ Ready <span class="tab-count" id="cnt-approved">0</span></button>
+    <button class="tab" data-tab="ordered">📦 Ordered <span class="tab-count" id="cnt-ordered">0</span></button>
+    <button class="tab" data-tab="confirmed">✓ Confirmed <span class="tab-count" id="cnt-confirmed">0</span></button>
+    <button class="tab" data-tab="ignored">🚫 Ignored <span class="tab-count" id="cnt-ignored">0</span></button>
+    <button class="tab" data-tab="muted">🔕 Muted <span class="tab-count" id="cnt-muted">0</span></button>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Search or jump to catalog…">
+    <button class="btn btn-inspect" id="searchInspect" title="Inspect any catalog">🔍 Inspect</button>
+    <button class="btn btn-primary" id="manualAdd" title="Manually add a catalog to Take Action">+ Add to Take Action</button>
+    <select id="filterTier">
+      <option value="">All tiers</option>
+      <option value="3">Critical only</option>
+      <option value="2">Warning only</option>
+      <option value="1">Watch only</option>
+      <option value="0">First Notice level only</option>
+    </select>
+    <select id="filterLabel"><option value="">All labels</option></select>
+    <select id="sortBy">
+      <option value="recent_press">Sort: Most recently pressed</option>
+      <option value="urgency">Sort: Urgency (tier → rate)</option>
+      <option value="rate">Sort: Monthly rate</option>
+      <option value="recent">Sort: Last sale (recent)</option>
+      <option value="catalog">Sort: Catalog #</option>
+    </select>
+  </div>
+
+  <div id="list" class="list"><div class="loading-state">Loading watchlist…</div></div>
+  <button id="loadMore" class="load-more hidden">Load 200 more</button>
+</section>
+
+<!-- ============ INSPECTOR VIEW ============ -->
+<section id="inspector-view" class="hidden">
+  <div class="inspector-search">
+    <input id="catInput" placeholder="Enter catalog (e.g. ILL001)…" />
+    <button id="searchBtn">Inspect</button>
+  </div>
+  <div id="variant-area"></div>
+  <div id="inspector-loading" class="loading-state hidden">Loading…</div>
+  <div id="inspector-error" class="hidden" style="background:#fee2e2;color:#991b1b;padding:16px 24px;border-radius:16px;border:1px solid #fecaca;margin-bottom:16px;"></div>
+  <div id="inspector-content"></div>
+</section>
+
+<!-- ============ REPORTS VIEW ============ -->
+<section id="reports-view" class="hidden">
+  <div class="tabs">
+    <button class="tab active" data-rtab="received">📥 Received</button>
+    <button class="tab" data-rtab="sold">💰 Sold</button>
+  </div>
+  <div class="toolbar">
+    <div id="period-selector" style="display:flex;gap:4px;">
+      <button class="period-btn active" data-period="week">Weekly</button>
+      <button class="period-btn" data-period="month">Monthly</button>
+      <button class="period-btn" data-period="year">Yearly</button>
+      <button class="period-btn" data-period="supplier" id="period-supplier">By supplier</button>
+    </div>
+    <input type="text" id="reports-search" placeholder="Filter…" style="margin-left:auto;">
+  </div>
+  <div id="reports-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;"></div>
+  <div id="reports-table"></div>
+</section>
+
+<!-- ============ RETURNS VIEW ============ -->
+<section id="returns-view" class="hidden">
+  <div class="returns-setup" id="returns-setup">
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">Process a return request</h2>
+    <p style="font-size:13px;color:var(--ink3);margin-bottom:20px">Upload the customer's return Excel — we'll check each catalog against their purchase history and flag anything outside the return window.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+      <div>
+        <label style="display:block;font-size:11px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Customer / shop</label>
+        <input type="text" id="returns-shop" placeholder="e.g. Hardwax, Clone, Phonica…" list="returns-shop-list" style="width:100%;padding:10px 12px;border:1px solid var(--border1);border-radius:8px;font:inherit;background:var(--card)">
+        <datalist id="returns-shop-list"></datalist>
+        <div id="returns-shop-hint" style="font-size:11px;color:var(--ink3);margin-top:4px"></div>
+      </div>
+      <div>
+        <label style="display:block;font-size:11px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Return window (months)</label>
+        <input type="number" id="returns-months" value="6" min="1" max="60" style="width:100%;padding:10px 12px;border:1px solid var(--border1);border-radius:8px;font:inherit;background:var(--card)">
+      </div>
+    </div>
+
+    <div id="returns-dropzone" style="border:2px dashed var(--border2);border-radius:12px;padding:32px;text-align:center;background:var(--card);cursor:pointer;transition:all 0.15s">
+      <div style="font-size:32px;margin-bottom:8px">📄</div>
+      <div style="font-size:14px;font-weight:600;color:var(--ink)" id="returns-dropzone-label">Click or drop the return request .xlsx here</div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:6px">Expected columns: Quantity, Catalog, Artist, Title, Format</div>
+      <input type="file" id="returns-file" accept=".xlsx,.xls" style="display:none">
+    </div>
+
+    <button class="btn btn-primary" id="returns-process" style="margin-top:14px;padding:10px 24px;font-size:14px" disabled>Process return request</button>
+  </div>
+
+  <div id="returns-results" class="hidden"></div>
+</section>
+
+</main>
+
+<!-- Generic modal for order/confirm dialogs -->
+<div id="modal-backdrop" class="modal-backdrop hidden" onclick="if(event.target.id==='modal-backdrop')closeModal()">
+  <div class="modal">
+    <h2 id="modal-title">Title</h2>
+    <div id="modal-subtitle" class="modal-subtitle"></div>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn-decline" onclick="closeModal()">Cancel</button>
+      <button class="btn-merge" id="modal-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://vetidcpiobgvuvfcobnr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_DahoYQFFDxs6QwCgZfAhdg_zevBaq9X';
+const HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json'
+};
+
+const $ = id => document.getElementById(id);
+const escapeHtml = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => n == null ? '—' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+const fmtSigned = n => { if (n == null) return '—'; const x = Number(n); return (x > 0 ? '+' : '') + x.toLocaleString('en-US'); };
+const fmtDate = d => d ? new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+const monthKey = d => { const dt = new Date(d); return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0'); };
+const monthLabel = k => { const [y,m] = k.split('-'); return new Date(+y, +m-1, 1).toLocaleDateString('en-GB', { month:'long', year:'numeric' }); };
+const daysSince = d => d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null;
+
+async function api(path) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, { headers: HEADERS });
+  if (!res.ok) throw new Error('API ' + res.status + ': ' + (await res.text()));
+  return res.json();
+}
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ============ WATCHLIST ============
+let allRows = [];
+let supplementalRows = {};
+let statusEntries = {};
+let labelOwners = {};
+let currentTab = 'firstnotice';
+let displayLimit = 200;
+
+// Tabs that simply filter by status
+const SIMPLE_STATUS_TABS = {
+  'requested': 'requested',
+  'approved':  'approved',
+  'ordered':   'ordered',
+  'confirmed': 'confirmed',
+  'ignored':   'ignored',
+  'muted':     'muted'
+};
+
+function extractLabelFromCat(cat) {
+  if (!cat) return '';
+  const m = cat.match(/^([A-Z]+)/i);
+  return m ? m[1].toUpperCase() : cat;
+}
+
+function getRowFor(catalogNr) {
+  return allRows.find(r => r.catalog_nr === catalogNr) || supplementalRows[catalogNr] || null;
+}
+
+function statusOf(catalogNr) {
+  return statusEntries[catalogNr]?.status;
+}
+
+function rowsByStatus(status) {
+  const cats = Object.keys(statusEntries).filter(c => statusEntries[c].status === status);
+  return cats.map(c => getRowFor(c) || {
+    catalog_nr: c,
+    label_code: extractLabelFromCat(c),
+    _supplemental: true
+  }).filter(Boolean);
+}
+
+// First Notice = ANY watchlist row with no decision yet
+function isFirstNoticeRow(r) {
+  const st = statusOf(r.catalog_nr);
+  return !st;
+}
+
+// Reminder fired = planned record where stock has dropped to/below the reminder
+function reminderFiredFor(catalogNr) {
+  const e = statusEntries[catalogNr];
+  if (!e || e.status !== 'planned' || e.reminder_stock_level == null) return false;
+  const r = getRowFor(catalogNr);
+  if (!r || r.stock_since_last_receival == null) return false;
+  return Number(r.stock_since_last_receival) <= Number(e.reminder_stock_level);
+}
+
+// Take Action = manually flagged hot OR planned-reminder that fired
+function isTakeActionRow(r) {
+  const st = statusOf(r.catalog_nr);
+  if (st === 'hot') return true;
+  if (st === 'planned' && reminderFiredFor(r.catalog_nr)) return true;
+  return false;
+}
+
+// Planned tab: status='planned' AND reminder not yet fired
+function isPlannedWaitingRow(r) {
+  const st = statusOf(r.catalog_nr);
+  if (st !== 'planned') return false;
+  return !reminderFiredFor(r.catalog_nr);
+}
+
+async function fetchAllPaginated(endpoint) {
+  const all = [];
+  const pageSize = 1000;
+  let offset = 0;
+  for (let i = 0; i < 20; i++) {
+    const sep = endpoint.includes('?') ? '&' : '?';
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/${endpoint}${sep}limit=${pageSize}&offset=${offset}`,
+      { headers: HEADERS }
+    );
+    if (!resp.ok) throw new Error('Fetch failed: ' + resp.status);
+    const batch = await resp.json();
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
+  return all;
+}
+
+async function fetchAllWatchlist() {
+  return fetchAllPaginated('repress_watchlist?select=*&order=alert_tier.desc,monthly_rate.desc.nullslast');
+}
+
+async function loadWatchlist() {
+  try {
+    const [wlRows, statuses, owners] = await Promise.all([
+      fetchAllWatchlist(),
+      fetchAllPaginated('candidate_status?select=*'),
+      fetchAllPaginated('label_owners?select=*')
+    ]);
+    allRows = wlRows;
+    statusEntries = {};
+    statuses.forEach(s => statusEntries[s.catalog_nr] = s);
+    labelOwners = {};
+    owners.forEach(o => labelOwners[o.label_code] = o);
+
+    const watchSet = new Set(allRows.map(r => r.catalog_nr));
+    const missing = Object.keys(statusEntries).filter(c => !watchSet.has(c));
+    if (missing.length > 0) {
+      const list = missing.map(c => `"${c}"`).join(',');
+      const suppResp = await fetch(`${SUPABASE_URL}/rest/v1/catalog_totals?catalog_nr=in.(${list})&select=*`, { headers: HEADERS });
+      if (suppResp.ok) {
+        const supp = await suppResp.json();
+        supplementalRows = {};
+        supp.forEach(r => {
+          r.label_code = extractLabelFromCat(r.catalog_nr);
+          supplementalRows[r.catalog_nr] = r;
+        });
+      }
+    }
+
+    populateLabels();
+    updateStats();
+    renderList();
+  } catch (err) {
+    $('list').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>Failed to load: ${err.message}</div>`;
+  }
+}
+
+function populateLabels() {
+  const labels = [...new Set(allRows.map(r => r.label_code).filter(Boolean))].sort();
+  const sel = $('filterLabel');
+  while (sel.options.length > 1) sel.remove(1);
+  labels.forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l; opt.textContent = l;
+    sel.appendChild(opt);
+  });
+}
+
+function updateStats() {
+  const firstNotice = allRows.filter(isFirstNoticeRow);
+  const takeAction = allRows.filter(isTakeActionRow).concat(
+    // Take action rows for catalogs in candidate_status but not in watchlist (manually added)
+    Object.keys(statusEntries)
+      .filter(c => statusEntries[c].status === 'hot' && !allRows.find(r => r.catalog_nr === c))
+      .map(c => getRowFor(c) || { catalog_nr: c, label_code: extractLabelFromCat(c) })
+  );
+  const planned = allRows.filter(isPlannedWaitingRow);
+  const workflow = ['requested','approved','ordered','confirmed'].reduce((sum, s) => sum + rowsByStatus(s).length, 0);
+
+  $('stat-firstnotice').textContent = fmt(firstNotice.length);
+  $('stat-takeaction').textContent = fmt(takeAction.length);
+  $('stat-planned').textContent = fmt(planned.length);
+  $('stat-workflow').textContent = fmt(workflow);
+
+  $('cnt-firstnotice').textContent = fmt(firstNotice.length);
+  $('cnt-takeaction').textContent = fmt(takeAction.length);
+  $('cnt-planned').textContent = fmt(planned.length);
+  $('cnt-requested').textContent = fmt(rowsByStatus('requested').length);
+  $('cnt-approved').textContent = fmt(rowsByStatus('approved').length);
+  $('cnt-ordered').textContent = fmt(rowsByStatus('ordered').length);
+  $('cnt-confirmed').textContent = fmt(rowsByStatus('confirmed').length);
+  $('cnt-ignored').textContent = fmt(rowsByStatus('ignored').length);
+  $('cnt-muted').textContent = fmt(rowsByStatus('muted').length);
+}
+
+function getVisibleRows() {
+  let rows;
+  if (currentTab === 'firstnotice') rows = allRows.filter(isFirstNoticeRow);
+  else if (currentTab === 'takeaction') {
+    rows = allRows.filter(isTakeActionRow);
+    // Include manually-added 'hot' catalogs that aren't in the watchlist view
+    const watchSet = new Set(allRows.map(r => r.catalog_nr));
+    Object.keys(statusEntries).forEach(c => {
+      if (statusEntries[c].status === 'hot' && !watchSet.has(c)) {
+        rows.push(getRowFor(c) || { catalog_nr: c, label_code: extractLabelFromCat(c), _supplemental: true });
+      }
+    });
+  }
+  else if (currentTab === 'planned') rows = allRows.filter(isPlannedWaitingRow);
+  else if (SIMPLE_STATUS_TABS[currentTab]) rows = rowsByStatus(SIMPLE_STATUS_TABS[currentTab]);
+  else rows = [...allRows];
+
+  const search = $('search').value.trim().toUpperCase();
+  if (search) rows = rows.filter(r => (r.catalog_nr||'').toUpperCase().includes(search) || (r.label_code||'').toUpperCase().includes(search));
+
+  const tier = $('filterTier').value;
+  if (tier !== '') rows = rows.filter(r => r.alert_tier === Number(tier));
+
+  const label = $('filterLabel').value;
+  if (label) rows = rows.filter(r => r.label_code === label);
+
+  const sortBy = $('sortBy').value;
+  if (sortBy === 'recent_press') rows.sort((a,b) => new Date(b.last_receipt_date||0) - new Date(a.last_receipt_date||0));
+  else if (sortBy === 'urgency') rows.sort((a,b) => ((b.alert_tier||0) - (a.alert_tier||0)) || ((b.monthly_rate||0) - (a.monthly_rate||0)));
+  else if (sortBy === 'rate') rows.sort((a,b) => (b.monthly_rate||0) - (a.monthly_rate||0));
+  else if (sortBy === 'recent') rows.sort((a,b) => new Date(b.last_sale_date||0) - new Date(a.last_sale_date||0));
+  else if (sortBy === 'catalog') rows.sort((a,b) => (a.catalog_nr||'').localeCompare(b.catalog_nr||''));
+
+  return rows;
+}
+
+function actionsForTab(r, tab) {
+  const inspect = `<button class="btn btn-inspect" onclick="showInspector('${r.catalog_nr}')">🔍 Inspect</button>`;
+  const cancelBtn = `<button class="btn btn-cancel" onclick="cancelAction('${r.catalog_nr}')" title="Move back to previous stage">↩️ Cancel</button>`;
+
+  if (tab === 'firstnotice') {
+    return `
+      <button class="btn btn-primary" onclick="planRecord('${r.catalog_nr}')">📅 Plan</button>
+      <button class="btn btn-mute" onclick="setStatus('${r.catalog_nr}', 'ignored')">🚫 Ignore</button>
+      <button class="btn btn-hot" onclick="requestRepress('${r.catalog_nr}')">✉️ Request Repress</button>
+      ${inspect}
+    `;
+  }
+  if (tab === 'takeaction') {
+    return `
+      <button class="btn btn-primary" onclick="requestRepress('${r.catalog_nr}')">✉️ Request Repress</button>
+      <button class="btn btn-confirm" onclick="straightToRepress('${r.catalog_nr}')" title="Skip label approval, go to Ready to Press">⚡ Straight to Repress</button>
+      ${inspect}
+      <button class="btn btn-mute" onclick="setStatus('${r.catalog_nr}', 'muted')">🔕 Mute</button>
+    `;
+  }
+  if (tab === 'planned') {
+    const e = statusEntries[r.catalog_nr];
+    return `
+      <button class="btn btn-primary" onclick="planRecord('${r.catalog_nr}')">✏️ Edit reminder</button>
+      <button class="btn btn-hot" onclick="setStatus('${r.catalog_nr}', 'hot')">🎯 Take Action now</button>
+      ${inspect}
+      ${cancelBtn}
+    `;
+  }
+  if (tab === 'requested') {
+    return `
+      <button class="btn btn-approve" onclick="markApproved('${r.catalog_nr}')">✅ Approved</button>
+      <button class="btn btn-mute" onclick="requestRepress('${r.catalog_nr}', true)">✉️ Re-send</button>
+      ${inspect}
+      ${cancelBtn}
+    `;
+  }
+  if (tab === 'approved') {
+    return `
+      <button class="btn btn-primary" onclick="placeOrder('${r.catalog_nr}')">📦 Order</button>
+      ${inspect}
+      ${cancelBtn}
+    `;
+  }
+  if (tab === 'ordered') {
+    return `
+      <button class="btn btn-confirm" onclick="confirmOrder('${r.catalog_nr}')">✓ Confirm Batch</button>
+      ${inspect}
+      ${cancelBtn}
+    `;
+  }
+  if (tab === 'confirmed') {
+    return `${inspect}${cancelBtn}`;
+  }
+  if (tab === 'ignored') {
+    return `
+      <button class="btn btn-hot" onclick="restoreFromIgnore('${r.catalog_nr}')">↩️ Restore</button>
+      ${inspect}
+    `;
+  }
+  if (tab === 'muted') {
+    return `
+      <button class="btn btn-hot" onclick="setStatus('${r.catalog_nr}', 'hot')">🎯 Take Action</button>
+      ${inspect}
+      ${cancelBtn}
+    `;
+  }
+  return `${inspect}`;
+}
+
+function statusMetaFor(r, tab) {
+  const s = statusEntries[r.catalog_nr] || {};
+  if (tab === 'planned' && s.reminder_stock_level != null) {
+    const cur = r.stock_since_last_receival;
+    return `<span class="row-status-meta">📅 Remind when stock ≤ <strong>${s.reminder_stock_level}</strong>${cur != null ? ` · currently ${cur}` : ''}</span>`;
+  }
+  if (tab === 'ignored' && s.decided_at) {
+    return `<span class="row-status-meta">🚫 Ignored ${fmtDate(s.decided_at)}</span>`;
+  }
+  if (tab === 'requested' && s.requested_at) {
+    const owner = labelOwners[r.label_code];
+    return `<span class="row-status-meta req">✉️ Requested ${fmtDate(s.requested_at)}${owner?.owner_email ? ' · ' + owner.owner_email : ''}</span>`;
+  }
+  if (tab === 'approved' && s.approved_at) {
+    return `<span class="row-status-meta ok">✅ Approved ${fmtDate(s.approved_at)}</span>`;
+  }
+  if (tab === 'ordered' && s.ordered_at) {
+    const wait = daysSince(s.ordered_at);
+    return `<span class="row-status-meta warn">📦 ${s.ordered_units || '?'} units ordered ${fmtDate(s.ordered_at)} (${wait}d ago)${s.ordered_notes ? ' · ' + escapeHtml(s.ordered_notes) : ''}</span>`;
+  }
+  if (tab === 'confirmed' && s.confirmed_at) {
+    const wait = daysSince(s.confirmed_at);
+    return `<span class="row-status-meta ok">✓ Batch <strong>${escapeHtml(s.batch_number || '?')}</strong> · confirmed ${fmtDate(s.confirmed_at)} (${wait}d ago)${s.ordered_units ? ' · ' + s.ordered_units + ' units' : ''}</span>`;
+  }
+  // Show "took to action manually" hint for hot rows in Take Action that came from planned
+  if (tab === 'takeaction' && s.status === 'hot' && s.reminder_stock_level != null) {
+    return `<span class="row-status-meta warn">🔔 Planned reminder fired (was set at ${s.reminder_stock_level})</span>`;
+  }
+  return '';
+}
+
+function rowHTML(r, tab) {
+  const stock = r.stock_since_last_receival;
+  const isManual = !r.last_receipt_date; // catalog with no data (manually added)
+
+  let tierBadge;
+  if (isManual) {
+    tierBadge = `<span class="tier-badge" style="background:var(--info-bg);color:var(--info)">manual</span>`;
+  } else if (r.alert_label && r.alert_label !== 'firstnotice') {
+    tierBadge = `<span class="tier-badge ${r.alert_label}">${r.alert_label}</span>`;
+  } else if (r.alert_label === 'firstnotice') {
+    tierBadge = `<span class="tier-badge" style="background:var(--info-bg);color:var(--info)">first notice</span>`;
+  } else {
+    tierBadge = `<span class="tier-badge" style="background:var(--muted-bg);color:var(--ink3)">—</span>`;
+  }
+
+  const recentChip = r.is_recent ? `<span class="age-chip recent">recent press</span>` : '';
+  const stockLine = isManual
+    ? `<span style="color:var(--ink3)">No transaction data on file — manually flagged</span>`
+    : stock != null
+      ? `<span>Stock: ${stock <= 0 ? `<strong style="color:var(--danger)">${stock} (sold out)</strong>` : `<strong>${stock}</strong>`} <span style="color:var(--ink3)">of ${fmt(r.last_receival_units)} received ${fmtDate(r.last_receipt_date)}</span></span>
+         <span>Rate: <strong>${r.monthly_rate ?? '—'}/mo</strong></span>
+         <span style="color:var(--ink3)">last sale ${fmtDate(r.last_sale_date)}</span>`
+      : `<span style="color:var(--ink3)">No stock data</span>`;
+  const meta = statusMetaFor(r, tab);
+
+  return `
+    <div class="wl-row" data-cat="${r.catalog_nr}" onclick="showInspector('${r.catalog_nr}')">
+      ${tierBadge}
+      <div class="row-main">
+        <div class="row-header">
+          <span class="catalog-nr">${r.catalog_nr}</span>
+          <span class="label-code">${r.label_code || '—'}</span>
+          ${recentChip}
+          ${r.sale_age && !isManual ? `<span class="age-chip ${r.sale_age}">${r.sale_age}</span>` : ''}
+        </div>
+        <div class="row-stats">${stockLine}</div>
+        ${meta}
+      </div>
+      <div class="actions" onclick="event.stopPropagation()">
+        ${actionsForTab(r, tab)}
+      </div>
+    </div>
+  `;
+}
+
+function renderList() {
+  const rows = getVisibleRows();
+  const list = $('list');
+  if (rows.length === 0) {
+    const messages = {
+      'firstnotice':'Nothing on First Notice. 🎉',
+      'takeaction':'Nothing needs action right now.',
+      'planned':'No reminders set.',
+      'requested':'No repress requests pending.',
+      'approved':'Nothing approved yet.',
+      'ordered':'No active orders.',
+      'confirmed':'No confirmed orders yet.',
+      'ignored':'Nothing ignored.',
+      'muted':'No muted records.'
+    };
+
+    // Diagnostic info specifically for First Notice
+    let diagnostic = '';
+    if (currentTab === 'firstnotice') {
+      const total = allRows.length;
+      const recentTrue = allRows.filter(r => r.is_recent === true).length;
+      const recentString = allRows.filter(r => r.is_recent === 'true').length;
+      const tier0 = allRows.filter(r => Number(r.alert_tier) === 0).length;
+      const recentTier0 = allRows.filter(r => (r.is_recent === true || r.is_recent === 'true') && Number(r.alert_tier) === 0).length;
+      const noStatus = allRows.filter(r => (r.is_recent === true || r.is_recent === 'true') && Number(r.alert_tier) === 0 && !statusEntries[r.catalog_nr]).length;
+      const statusCount = Object.keys(statusEntries).length;
+      const sample = allRows.find(r => Number(r.alert_tier) === 0);
+      diagnostic = `
+        <div style="background:var(--card);border:1px solid var(--border1);border-radius:10px;padding:16px;margin-top:20px;text-align:left;font-family:monospace;font-size:12px;color:var(--ink2);max-width:600px;margin-left:auto;margin-right:auto;">
+          <div style="font-weight:700;margin-bottom:8px;color:var(--ink)">🔧 Debug:</div>
+          <div>allRows.length: <strong>${total}</strong></div>
+          <div>is_recent === true: <strong>${recentTrue}</strong></div>
+          <div>is_recent === 'true' (string): <strong>${recentString}</strong></div>
+          <div>alert_tier === 0: <strong>${tier0}</strong></div>
+          <div>recent AND tier 0: <strong>${recentTier0}</strong></div>
+          <div>recent AND tier 0 AND no status: <strong>${noStatus}</strong></div>
+          <div>candidate_status rows loaded: <strong>${statusCount}</strong></div>
+          ${sample ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border1)">Sample row (alert_tier=0): <pre style="white-space:pre-wrap;margin:4px 0">${escapeHtml(JSON.stringify({catalog_nr: sample.catalog_nr, is_recent: sample.is_recent, is_recent_type: typeof sample.is_recent, alert_tier: sample.alert_tier, alert_tier_type: typeof sample.alert_tier, status_exists: !!statusEntries[sample.catalog_nr]}, null, 2))}</pre></div>` : ''}
+        </div>
+      `;
+    }
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div>${messages[currentTab] || 'No records.'}${diagnostic}</div>`;
+    $('loadMore').classList.add('hidden');
+    return;
+  }
+  const visible = rows.slice(0, displayLimit);
+  list.innerHTML = visible.map(r => rowHTML(r, currentTab)).join('');
+  if (rows.length > displayLimit) {
+    $('loadMore').classList.remove('hidden');
+    $('loadMore').textContent = `Load 200 more (${fmt(rows.length - displayLimit)} remaining)`;
+  } else {
+    $('loadMore').classList.add('hidden');
+  }
+}
+
+async function updateStatus(catalogNr, updates) {
+  try {
+    const rowEl = document.querySelector(`.wl-row[data-cat="${CSS.escape(catalogNr)}"]`);
+    if (rowEl) rowEl.classList.add('removing');
+    const body = { catalog_nr: catalogNr, ...updates };
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/candidate_status?on_conflict=catalog_nr`, {
+      method: 'POST',
+      headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    statusEntries[catalogNr] = { ...(statusEntries[catalogNr] || {}), catalog_nr: catalogNr, ...updates };
+    updateStats();
+    renderList();
+    return true;
+  } catch (err) {
+    toast(`Failed: ${err.message}`);
+    const rowEl = document.querySelector(`.wl-row[data-cat="${CSS.escape(catalogNr)}"]`);
+    if (rowEl) rowEl.classList.remove('removing');
+    return false;
+  }
+}
+
+async function setStatus(catalogNr, status, extra = {}) {
+  const updates = { status, ...extra };
+  if (status === 'ignored' || status === 'planned') updates.decided_at = new Date().toISOString();
+  const success = await updateStatus(catalogNr, updates);
+  if (success) {
+    const labels = { 'hot':'🎯 Take Action', 'muted':'🔕 Muted', 'ignored':'🚫 Ignored', 'planned':'📅 Planned' };
+    toast(`${catalogNr} → ${labels[status] || status}`);
+  }
+}
+
+// First Notice / Planned actions
+function planRecord(catalog) {
+  const r = getRowFor(catalog);
+  const current = statusEntries[catalog]?.reminder_stock_level;
+  const stock = r?.stock_since_last_receival;
+  const suggested = current ?? (stock != null && stock > 20 ? 20 : 10);
+
+  openModal({
+    title: `Set reminder for ${catalog}`,
+    subtitle: stock != null ? `Currently ${stock} in stock. We'll bring this back to Take Action when it drops to your level.` : 'Set the stock level at which to alert you.',
+    fields: [
+      { name: 'level', label: 'Remind me when stock ≤', type: 'number', value: suggested, placeholder: '20' }
+    ],
+    confirmLabel: '📅 Set reminder',
+    onConfirm: async (values) => {
+      const level = parseInt(values.level, 10);
+      if (isNaN(level) || level < 0) { toast('Enter a valid number'); return; }
+      await setStatus(catalog, 'planned', { reminder_stock_level: level });
+      closeModal();
+    }
+  });
+}
+
+async function restoreFromIgnore(catalog) {
+  if (!confirm(`Restore ${catalog} from Ignored? It'll go back to evaluation.`)) return;
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/candidate_status?catalog_nr=eq.${encodeURIComponent(catalog)}`, {
+      method: 'DELETE',
+      headers: HEADERS
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    delete statusEntries[catalog];
+    updateStats();
+    renderList();
+    toast(`↩️ ${catalog} restored`);
+  } catch (err) {
+    toast(`Failed: ${err.message}`);
+  }
+}
+
+async function straightToRepress(catalog) {
+  if (!confirm(`Skip label owner approval for ${catalog} and move directly to "Ready to Press"?`)) return;
+  await updateStatus(catalog, {
+    status: 'approved',
+    approved_at: new Date().toISOString(),
+    approved_via: null
+  });
+  toast(`⚡ ${catalog} moved to Ready to Press`);
+}
+
+async function manualAddCatalog() {
+  openModal({
+    title: 'Add catalog to Take Action',
+    subtitle: 'Type any catalog number — even one that hasn\'t sold recently or never been imported.',
+    fields: [
+      { name: 'catalog', label: 'Catalog number', placeholder: 'e.g. ILL999' }
+    ],
+    confirmLabel: '+ Add',
+    onConfirm: async (values) => {
+      const cat = (values.catalog || '').trim().toUpperCase();
+      if (!cat) { toast('Catalog required'); return; }
+      // Check if it exists in catalog_totals
+      try {
+        const check = await api(`catalog_totals?catalog_nr=eq.${encodeURIComponent(cat)}&select=catalog_nr`);
+        const exists = check.length > 0;
+        if (!exists) {
+          if (!confirm(`${cat} doesn't appear in our sales data. Add it anyway?`)) return;
+        }
+      } catch (e) { /* fail open */ }
+      await updateStatus(cat, { status: 'hot' });
+      // Refresh supplemental data so it shows correctly
+      await loadWatchlist();
+      currentTab = 'takeaction';
+      document.querySelectorAll('#tabs-container .tab').forEach(x => x.classList.toggle('active', x.dataset.tab === 'takeaction'));
+      renderList();
+      closeModal();
+      toast(`+ ${cat} added to Take Action`);
+    }
+  });
+}
+
+// ============ MODAL ============
+let modalConfirmHandler = null;
+
+function openModal({ title, subtitle, fields, confirmLabel, onConfirm }) {
+  $('modal-title').textContent = title;
+  $('modal-subtitle').textContent = subtitle || '';
+  const body = $('modal-body');
+  body.innerHTML = '';
+  fields.forEach(f => {
+    const label = document.createElement('label');
+    label.textContent = f.label;
+    body.appendChild(label);
+    let input;
+    if (f.type === 'textarea') {
+      input = document.createElement('textarea');
+      input.rows = 3;
+    } else {
+      input = document.createElement('input');
+      input.type = f.type || 'text';
+    }
+    input.id = `modal-field-${f.name}`;
+    input.dataset.name = f.name;
+    if (f.placeholder) input.placeholder = f.placeholder;
+    if (f.value != null) input.value = f.value;
+    body.appendChild(input);
+  });
+  $('modal-confirm').textContent = confirmLabel || 'Confirm';
+  modalConfirmHandler = () => {
+    const values = {};
+    fields.forEach(f => values[f.name] = $(`modal-field-${f.name}`).value);
+    onConfirm(values);
+  };
+  $('modal-confirm').onclick = () => {
+    modalConfirmHandler();
+  };
+  $('modal-backdrop').classList.remove('hidden');
+  setTimeout(() => { const first = body.querySelector('input,textarea'); if (first) first.focus(); }, 50);
+}
+
+function closeModal() {
+  $('modal-backdrop').classList.add('hidden');
+  modalConfirmHandler = null;
+}
+
+// ============ WORKFLOW ACTIONS ============
+const REVERT_MAP = {
+  'hot':       { previous: null,        clear: { reminder_stock_level: null } },
+  'muted':     { previous: null,        clear: {} },
+  'planned':   { previous: null,        clear: { reminder_stock_level: null, decided_at: null } },
+  'ignored':   { previous: null,        clear: { decided_at: null } },
+  'requested': { previous: 'hot',       clear: { requested_at: null } },
+  'approved':  { previous: 'requested', clear: { approved_at: null } },
+  'ordered':   { previous: 'approved',  clear: { ordered_at: null, ordered_units: null, ordered_notes: null } },
+  'confirmed': { previous: 'ordered',   clear: { confirmed_at: null, batch_number: null } }
+};
+
+const STAGE_LABEL = {
+  null: 'First Notice / Take Action',
+  'hot': 'Take Action',
+  'planned': 'Planned',
+  'ignored': 'Ignored',
+  'requested': 'Requested',
+  'approved': 'Ready to Press',
+  'ordered': 'Ordered',
+  'confirmed': 'Confirmed',
+  'muted': 'Muted'
+};
+
+async function cancelAction(catalog) {
+  const entry = statusEntries[catalog];
+  if (!entry || !entry.status) return;
+  const revert = REVERT_MAP[entry.status];
+  if (!revert) return;
+  const fromLabel = STAGE_LABEL[entry.status] || entry.status;
+  const toLabel = STAGE_LABEL[revert.previous] || 'To Decide';
+  if (!confirm(`Move ${catalog} back from "${fromLabel}" to "${toLabel}"?`)) return;
+
+  if (revert.previous === null) {
+    // Delete the candidate_status row entirely → back to To Decide
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/rest/v1/candidate_status?catalog_nr=eq.${encodeURIComponent(catalog)}`, {
+        method: 'DELETE',
+        headers: HEADERS
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      delete statusEntries[catalog];
+      updateStats();
+      renderList();
+      toast(`↩️ ${catalog} → ${toLabel}`);
+    } catch (err) {
+      toast(`Cancel failed: ${err.message}`);
+    }
+    return;
+  }
+
+  // Downgrade status, clear the timestamps/fields specific to the cancelled stage
+  const updates = { status: revert.previous, ...revert.clear };
+  const success = await updateStatus(catalog, updates);
+  if (success) toast(`↩️ ${catalog} → ${toLabel}`);
+}
+
+function openGmailCompose(to, subject, body) {
+  const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const win = window.open(url, '_blank');
+  if (!win || win.closed) {
+    toast('⚠️ Popup blocked — allow popups for this site and try again');
+    return false;
+  }
+  return true;
+}
+
+async function requestRepress(catalog, isResend) {
+  const r = getRowFor(catalog);
+  const labelCode = r?.label_code || extractLabelFromCat(catalog);
+  const existing = labelOwners[labelCode] || {};
+
+  const pressedLine = (r?.last_receival_units != null && r?.last_receipt_date)
+    ? `A total of ${r.last_receival_units} copies were pressed on ${fmtDate(r.last_receipt_date)}. `
+    : '';
+  const defaultSubject = `Repress request: ${catalog}`;
+  const defaultBody = `Hi ${existing.owner_name || ''},
+
+We are reaching out because we believe it may be a good idea to repress ${catalog}.
+
+${pressedLine}Based on recent sales activity and the backorders currently in our system, we believe there is sufficient demand to justify an additional pressing.
+
+Could you please confirm whether you would like us to proceed with the repress?
+
+Thank you.`;
+
+  openModal({
+    title: `Request repress: ${catalog}`,
+    subtitle: existing.owner_email ? `Sending to ${existing.owner_email}` : `Enter the label owner's email — we'll remember it for next time.`,
+    fields: [
+      { name: 'email',   label: 'Owner email',   type: 'email', value: existing.owner_email || '', placeholder: 'owner@label.com' },
+      { name: 'name',    label: 'Owner name',    value: existing.owner_name || '', placeholder: 'First name (optional)' },
+      { name: 'subject', label: 'Subject',       value: defaultSubject },
+      { name: 'body',    label: 'Body (edit before sending)', type: 'textarea', value: defaultBody }
+    ],
+    confirmLabel: '✉️ Open in Gmail',
+    onConfirm: (values) => {
+      const email = (values.email || '').trim();
+      if (!email || !email.includes('@')) { toast('Valid email required'); return; }
+
+      // Open Gmail SYNCHRONOUSLY from this click — preserves user gesture so the popup is allowed
+      const opened = openGmailCompose(email, values.subject, values.body);
+      if (!opened) return;
+
+      // Save the label owner + status in the background
+      labelOwners[labelCode] = { label_code: labelCode, owner_email: email, owner_name: values.name || '' };
+      fetch(`${SUPABASE_URL}/rest/v1/label_owners?on_conflict=label_code`, {
+        method: 'POST',
+        headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({ label_code: labelCode, owner_email: email, owner_name: values.name || '', updated_at: new Date().toISOString() })
+      }).catch(e => console.warn('Save label owner failed:', e));
+
+      if (!isResend) {
+        updateStatus(catalog, { status: 'requested', requested_at: new Date().toISOString() });
+      }
+
+      closeModal();
+      toast(`✉️ Gmail opened — review and click Send`);
+    }
+  });
+}
+
+async function markApproved(catalog) {
+  await updateStatus(catalog, { status: 'approved', approved_at: new Date().toISOString() });
+  toast(`✅ ${catalog} approved — ready to press`);
+}
+
+async function placeOrder(catalog) {
+  const r = getRowFor(catalog);
+  const labelCode = r?.label_code || extractLabelFromCat(catalog);
+
+  // Get all approved (ready to press) titles, newest first
+  const approvedRows = rowsByStatus('approved').sort((a, b) => {
+    const sa = statusEntries[a.catalog_nr]?.approved_at || '';
+    const sb = statusEntries[b.catalog_nr]?.approved_at || '';
+    return sb.localeCompare(sa);
+  });
+
+  const suggestUnits = (row) => row?.monthly_rate ? Math.max(200, Math.round(row.monthly_rate * 12 / 50) * 50) : 200;
+
+  $('modal-title').textContent = `Order repress`;
+  $('modal-subtitle').textContent = `Send one order email to pressing@triplevision.nl covering 1 or more titles.`;
+
+  const body = $('modal-body');
+  body.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <label style="margin:0">Titles in this order <span style="color:var(--ink3);font-weight:500;text-transform:none;letter-spacing:0">(<span id="order-count">1</span> selected)</span></label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn" style="padding:4px 10px;font-size:12px" onclick="document.querySelectorAll('.order-cat-cb').forEach(cb=>cb.checked=true); updateOrderCount();">All</button>
+        <button type="button" class="btn" style="padding:4px 10px;font-size:12px" onclick="document.querySelectorAll('.order-cat-cb').forEach(cb=>cb.checked=false); updateOrderCount();">None</button>
+      </div>
+    </div>
+
+    <div id="order-list" style="max-height:380px;overflow-y:auto;border:1px solid var(--border1);border-radius:8px;padding:6px;background:var(--page);margin-bottom:14px;">
+      ${approvedRows.map(row => {
+        const checked = row.catalog_nr === catalog ? 'checked' : '';
+        const suggested = suggestUnits(row);
+        return `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff;border-radius:6px;margin-bottom:4px;border:1px solid transparent;">
+            <input type="checkbox" class="order-cat-cb" value="${row.catalog_nr}" ${checked} onchange="updateOrderCount()">
+            <div style="flex:1;">
+              <strong>${row.catalog_nr}</strong>
+              <span style="color:var(--ink3);font-size:12px;margin-left:8px">${row.label_code || ''}</span>
+              ${row.monthly_rate ? `<span style="color:var(--ink3);font-size:11px;margin-left:6px">${row.monthly_rate}/mo</span>` : ''}
+            </div>
+            <input type="number" class="order-units" data-cat="${row.catalog_nr}" value="${suggested}" min="1" style="width:90px;padding:6px 10px;margin:0;font-size:13px;text-align:right">
+            <span style="font-size:12px;color:var(--ink3);width:36px">units</span>
+            <input type="text" class="order-notes" data-cat="${row.catalog_nr}" placeholder="notes (optional)" style="width:150px;padding:6px 10px;margin:0;font-size:12px;">
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  $('modal-confirm').textContent = '📦 Open in Gmail';
+  $('modal-confirm').onclick = doBatchOrder;
+  $('modal-backdrop').classList.remove('hidden');
+  setTimeout(updateOrderCount, 50);
+}
+
+function updateOrderCount() {
+  const n = document.querySelectorAll('.order-cat-cb:checked').length;
+  const el = $('order-count');
+  if (el) el.textContent = n;
+}
+
+function doBatchOrder() {
+  const checked = [...document.querySelectorAll('.order-cat-cb:checked')];
+  if (checked.length === 0) { toast('Select at least one title'); return; }
+
+  const items = [];
+  for (const cb of checked) {
+    const cat = cb.value;
+    const unitsInput = document.querySelector(`.order-units[data-cat="${CSS.escape(cat)}"]`);
+    const notesInput = document.querySelector(`.order-notes[data-cat="${CSS.escape(cat)}"]`);
+    const units = parseInt(unitsInput?.value, 10);
+    if (!units || units < 1) { toast(`Invalid units for ${cat}`); return; }
+    const notes = (notesInput?.value || '').trim();
+    const row = getRowFor(cat);
+    items.push({ catalog_nr: cat, label_code: row?.label_code || extractLabelFromCat(cat), units, notes });
+  }
+
+  const itemsText = items.map((it, i) =>
+    `${i+1}. ${it.catalog_nr} (${it.label_code}) — ${it.units} units${it.notes ? ` — ${it.notes}` : ''}`
+  ).join('\n');
+
+  const subject = items.length === 1
+    ? `Repress order: ${items[0].catalog_nr} — ${items[0].units} units`
+    : `Repress order: ${items.length} titles`;
+
+  const body = `Hi,
+
+Please order the following repress${items.length === 1 ? '' : 'es'} with the pressing plant:
+
+${itemsText}
+
+All label owners have approved the repress${items.length === 1 ? '' : 'es'}.
+
+Once placed, please reply with the order batch number${items.length === 1 ? '' : 's'} so we can confirm.
+
+Thanks,
+Sales team`;
+
+  const opened = openGmailCompose('pressing@triplevision.nl', subject, body);
+  if (!opened) return;
+
+  const ts = new Date().toISOString();
+  // Update each item's status to 'ordered' in the background
+  Promise.all(items.map(it =>
+    updateStatus(it.catalog_nr, {
+      status: 'ordered',
+      ordered_at: ts,
+      ordered_units: it.units,
+      ordered_notes: it.notes || null
+    })
+  )).then(() => {
+    toast(`📦 Gmail opened — ${items.length} title${items.length===1?'':'s'} moved to Ordered`);
+  });
+
+  closeModal();
+}
+
+async function confirmOrder(catalog) {
+  const orderedRows = rowsByStatus('ordered').sort((a,b) => {
+    const sa = statusEntries[a.catalog_nr]?.ordered_at || '';
+    const sb = statusEntries[b.catalog_nr]?.ordered_at || '';
+    return sb.localeCompare(sa); // newest first
+  });
+
+  if (orderedRows.length === 0) {
+    toast('No ordered titles to confirm');
+    return;
+  }
+
+  $('modal-title').textContent = `Confirm pressing batch`;
+  $('modal-subtitle').textContent = `Enter the batch number, then tick all titles included in this batch.`;
+
+  const body = $('modal-body');
+  body.innerHTML = `
+    <label>Batch number</label>
+    <input id="batch-input" type="text" placeholder="e.g. TV-2026-0145" />
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 4px;">
+      <label style="margin:0">Titles in this batch <span style="color:var(--ink3);font-weight:500;text-transform:none;letter-spacing:0">(<span id="batch-count">1</span> selected)</span></label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn" style="padding:4px 10px;font-size:12px" onclick="document.querySelectorAll('.batch-cat-cb').forEach(cb=>cb.checked=true); updateBatchCount();">All</button>
+        <button type="button" class="btn" style="padding:4px 10px;font-size:12px" onclick="document.querySelectorAll('.batch-cat-cb').forEach(cb=>cb.checked=false); updateBatchCount();">None</button>
+      </div>
+    </div>
+
+    <div id="batch-list" style="max-height:340px;overflow-y:auto;border:1px solid var(--border1);border-radius:8px;padding:4px;background:var(--page);">
+      ${orderedRows.map(r => {
+        const s = statusEntries[r.catalog_nr] || {};
+        const checked = r.catalog_nr === catalog ? 'checked' : '';
+        return `
+          <label style="display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-radius:6px;background:#fff;margin-bottom:4px;border:1px solid transparent;" onmouseover="this.style.borderColor='var(--border1)'" onmouseout="this.style.borderColor='transparent'">
+            <input type="checkbox" class="batch-cat-cb" value="${r.catalog_nr}" ${checked} onchange="updateBatchCount()">
+            <div style="flex:1;display:flex;justify-content:space-between;gap:10px;align-items:center;">
+              <div>
+                <strong>${r.catalog_nr}</strong>
+                <span style="color:var(--ink3);font-size:12px;margin-left:8px">${r.label_code || ''}</span>
+              </div>
+              <div style="color:var(--ink3);font-size:12px;text-align:right;">
+                <div><strong style="color:var(--ink2)">${s.ordered_units ?? '?'}</strong> units</div>
+                <div>ordered ${fmtDate(s.ordered_at)}</div>
+              </div>
+            </div>
+          </label>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  $('modal-confirm').textContent = '✓ Confirm batch';
+  $('modal-confirm').onclick = doBatchConfirm;
+  $('modal-backdrop').classList.remove('hidden');
+  setTimeout(() => $('batch-input').focus(), 50);
+}
+
+function updateBatchCount() {
+  const n = document.querySelectorAll('.batch-cat-cb:checked').length;
+  const el = $('batch-count');
+  if (el) el.textContent = n;
+}
+
+async function doBatchConfirm() {
+  const batch = $('batch-input').value.trim();
+  if (!batch) { toast('Batch number required'); return; }
+  const cats = [...document.querySelectorAll('.batch-cat-cb:checked')].map(cb => cb.value);
+  if (cats.length === 0) { toast('Select at least one title'); return; }
+
+  $('modal-confirm').disabled = true;
+  $('modal-confirm').textContent = 'Confirming…';
+
+  const ts = new Date().toISOString();
+  let success = 0;
+  const failures = [];
+  for (const cat of cats) {
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/rest/v1/candidate_status?on_conflict=catalog_nr`, {
+        method: 'POST',
+        headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          catalog_nr: cat,
+          status: 'confirmed',
+          confirmed_at: ts,
+          batch_number: batch
+        })
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      statusEntries[cat] = { ...(statusEntries[cat] || {}), catalog_nr: cat, status: 'confirmed', confirmed_at: ts, batch_number: batch };
+      success++;
+    } catch (e) {
+      failures.push(cat);
+    }
+  }
+
+  $('modal-confirm').disabled = false;
+  closeModal();
+  updateStats();
+  renderList();
+  if (failures.length === 0) {
+    toast(`✓ ${success} title${success===1?'':'s'} confirmed with batch ${batch}`);
+  } else {
+    toast(`✓ ${success} confirmed, ${failures.length} failed`);
+  }
+}
+
+// ============ INSPECTOR ============
+let inspectorCurrentCatalog = null;
+let inspectorMergedCatalogs = []; // [catalog_nr, ...] if merged view active
+let inspectorMergeBase = null;    // base catalog of current merge
+let lastWatchlistScrollY = 0;     // remembers scroll position to restore on back
+let lastViewedCatalog = null;     // catalog clicked from watchlist, briefly highlighted on return
+
+async function lookupMerge(catalog) {
+  try {
+    const myMerge = await api(`catalog_merges?catalog_nr=eq.${encodeURIComponent(catalog)}&select=base_catalog_nr`);
+    if (!myMerge || myMerge.length === 0) return null;
+    const base = myMerge[0].base_catalog_nr;
+    const members = await api(`catalog_merges?base_catalog_nr=eq.${encodeURIComponent(base)}&select=catalog_nr&order=catalog_nr.asc`);
+    return { base, members: members.map(m => m.catalog_nr) };
+  } catch (e) {
+    console.warn('Merge lookup failed:', e);
+    return null;
+  }
+}
+
+// Top-level view tracker (watchlist vs reports)
+let currentTopView = 'watchlist';
+
+function showInspector(catalog) {
+  const inWatchlist = !$('watchlist-view').classList.contains('hidden');
+  if (inWatchlist) {
+    lastWatchlistScrollY = window.scrollY;
+    lastViewedCatalog = catalog;
+  }
+  $('watchlist-view').classList.add('hidden');
+  $('reports-view').classList.add('hidden');
+  $('returns-view').classList.add('hidden');
+  $('inspector-view').classList.remove('hidden');
+  $('back-btn').classList.remove('hidden');
+  $('page-title').textContent = 'Catalog Inspector';
+  $('catInput').value = catalog;
+  inspectorCurrentCatalog = catalog;
+  inspectorMergedCatalogs = [];
+  inspectorMergeBase = null;
+  window.scrollTo(0, 0);
+  loadInspector(catalog);
+}
+
+function showWatchlist() {
+  currentTopView = 'watchlist';
+  $('inspector-view').classList.add('hidden');
+  $('reports-view').classList.add('hidden');
+  $('returns-view').classList.add('hidden');
+  $('watchlist-view').classList.remove('hidden');
+  $('back-btn').classList.add('hidden');
+  $('page-title').textContent = 'Repress Watchlist';
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'watchlist'));
+  inspectorCurrentCatalog = null;
+  window.scrollTo(0, lastWatchlistScrollY);
+  if (lastViewedCatalog) {
+    requestAnimationFrame(() => {
+      const row = document.querySelector(`.wl-row[data-cat="${CSS.escape(lastViewedCatalog)}"]`);
+      if (row) {
+        row.style.transition = 'background 0.4s, border-color 0.4s';
+        row.style.background = 'var(--accent3)';
+        row.style.borderColor = 'var(--accent)';
+        setTimeout(() => { row.style.background = ''; row.style.borderColor = ''; }, 1600);
+      }
+    });
+  }
+}
+
+function showReports() {
+  currentTopView = 'reports';
+  $('inspector-view').classList.add('hidden');
+  $('watchlist-view').classList.add('hidden');
+  $('returns-view').classList.add('hidden');
+  $('reports-view').classList.remove('hidden');
+  $('back-btn').classList.add('hidden');
+  $('page-title').textContent = 'Reports';
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'reports'));
+  window.scrollTo(0, 0);
+  loadReports();
+}
+
+function showReturns() {
+  currentTopView = 'returns';
+  $('inspector-view').classList.add('hidden');
+  $('watchlist-view').classList.add('hidden');
+  $('reports-view').classList.add('hidden');
+  $('returns-view').classList.remove('hidden');
+  $('back-btn').classList.add('hidden');
+  $('page-title').textContent = 'Returns';
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'returns'));
+  window.scrollTo(0, 0);
+  loadReturnsCustomers();
+}
+
+// ---- Variant detection ----
+// Strip trailing repress-suffix patterns: R, RP, RP{n}, R{n}
+function stripRepressSuffix(catalog) {
+  return catalog.replace(/(R(P\d*|\d+)?)$/i, '');
+}
+function isVariantOf(candidate, base) {
+  if (!candidate.startsWith(base)) return false;
+  const suffix = candidate.slice(base.length);
+  return suffix === '' || /^R(P\d*|\d+)?$/i.test(suffix);
+}
+
+async function detectVariants(catalog) {
+  const base = stripRepressSuffix(catalog);
+  if (!base || base === catalog && !catalog.match(/^[A-Z]+\d+$/i)) {
+    // No suffix to strip and no clear base pattern — still search for variants of THIS as base
+  }
+  try {
+    // Encode the wildcard - PostgREST uses * as wildcard
+    const candidates = await api(`catalog_totals?catalog_nr=like.${encodeURIComponent(base)}*&select=catalog_nr,first_receipt_date,last_receipt_date,total_received,total_sold,last_receival_units`);
+    const variants = candidates.filter(c => isVariantOf(c.catalog_nr, base));
+    return { base, variants };
+  } catch (e) {
+    console.warn('Variant detection failed:', e);
+    return { base, variants: [] };
+  }
+}
+
+function shouldShowVariantBanner(catalog, variants) {
+  if (variants.length < 2) return false;
+  // Check if user already dismissed for this catalog
+  const dismissed = JSON.parse(localStorage.getItem('variant_dismissed') || '{}');
+  return !dismissed[catalog];
+}
+
+function renderVariantBanner(currentCatalog, variants) {
+  // List variants, with the current one pre-checked and others as optional
+  const pills = variants.map(v => `
+    <div class="variant-pill">
+      <input type="checkbox" id="vchk-${v.catalog_nr}" value="${v.catalog_nr}" ${v.catalog_nr === currentCatalog ? 'checked disabled' : 'checked'}>
+      <label for="vchk-${v.catalog_nr}">
+        ${v.catalog_nr}
+        <span style="color:var(--ink3);font-weight:500;font-size:11px;margin-left:4px">
+          (${fmt(v.total_received)} received, ${fmt(v.total_sold)} sold)
+        </span>
+      </label>
+    </div>
+  `).join('');
+
+  return `
+    <div class="variant-banner" id="variant-banner">
+      <h3>🔗 Possible repress siblings found (${variants.length})</h3>
+      <p>These catalog numbers look related — likely the same record under different repress numbers (R / RP / RP2 suffixes). Want to merge their data for a combined view?</p>
+      <div class="variant-list">${pills}</div>
+      <div class="variant-actions">
+        <button class="btn-merge" onclick="performMerge()">Merge selected</button>
+        <button class="btn-decline" onclick="dismissVariants()">Keep separate</button>
+        <button class="btn-decline" onclick="dismissVariantsPermanent()">Don't ask again for this</button>
+      </div>
+    </div>
+  `;
+}
+
+function dismissVariants() {
+  $('variant-area').innerHTML = '';
+}
+
+function dismissVariantsPermanent() {
+  const dismissed = JSON.parse(localStorage.getItem('variant_dismissed') || '{}');
+  dismissed[inspectorCurrentCatalog] = true;
+  localStorage.setItem('variant_dismissed', JSON.stringify(dismissed));
+  $('variant-area').innerHTML = '';
+  toast(`Won't ask about ${inspectorCurrentCatalog} again`);
+}
+
+async function performMerge() {
+  const checks = document.querySelectorAll('#variant-banner input[type=checkbox]:checked');
+  const cats = Array.from(checks).map(c => c.value);
+  if (cats.length < 2) {
+    toast('Select at least 2 catalogs to merge');
+    return;
+  }
+  // Determine base: shortest, alphabetical tiebreak (e.g. PRRUKDUB001 wins over PRRUKDUB001R)
+  const base = [...cats].sort((a,b) => a.length - b.length || a.localeCompare(b))[0];
+
+  try {
+    const rows = cats.map(c => ({ catalog_nr: c, base_catalog_nr: base }));
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/catalog_merges?on_conflict=catalog_nr`, {
+      method: 'POST',
+      headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(rows)
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    toast(`✅ Merged ${cats.length} catalogs under ${base} (saved)`);
+  } catch (err) {
+    toast(`Save failed: ${err.message}`);
+    return;
+  }
+
+  inspectorMergedCatalogs = cats;
+  inspectorMergeBase = base;
+  loadInspector(inspectorCurrentCatalog);
+}
+
+async function unmergeCurrent() {
+  const cats = [...inspectorMergedCatalogs];
+  if (cats.length < 2) return;
+  if (!confirm(`Unmerge these ${cats.length} catalogs? Future clicks will show them separately again.`)) return;
+
+  try {
+    const catList = cats.map(c => `"${c}"`).join(',');
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/catalog_merges?catalog_nr=in.(${catList})`, {
+      method: 'DELETE',
+      headers: HEADERS
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    toast(`Unmerged — saved mapping removed`);
+  } catch (err) {
+    toast(`Unmerge failed: ${err.message}`);
+    return;
+  }
+
+  inspectorMergedCatalogs = [];
+  inspectorMergeBase = null;
+  loadInspector(inspectorCurrentCatalog);
+}
+
+// ---- Inspector data loading ----
+async function loadInspector(catalog) {
+  const target = (catalog || '').trim().toUpperCase();
+  if (!target) return;
+  $('inspector-content').innerHTML = '';
+  $('inspector-error').classList.add('hidden');
+  $('inspector-loading').classList.remove('hidden');
+  $('variant-area').innerHTML = '';
+
+  try {
+    // If no merge state set yet by a manual action, check DB for a persisted merge
+    if (inspectorMergedCatalogs.length === 0) {
+      const saved = await lookupMerge(target);
+      if (saved && saved.members.length >= 2) {
+        inspectorMergedCatalogs = saved.members;
+        inspectorMergeBase = saved.base;
+      }
+    }
+
+    let summaries, transactions;
+    const merged = inspectorMergedCatalogs.length >= 2;
+
+    if (merged) {
+      // Fetch data for all merged catalogs
+      const catList = inspectorMergedCatalogs.map(c => `"${c}"`).join(',');
+      [summaries, transactions] = await Promise.all([
+        api(`catalog_totals?catalog_nr=in.(${catList})`),
+        api(`transactions?catalog_nr=in.(${catList})&order=datum.desc&limit=20000`)
+      ]);
+      if (!summaries || summaries.length === 0) { showInspectorError('No data found.'); return; }
+      renderInspector(buildMergedSummary(summaries, target), transactions || []);
+    } else {
+      [summaries, transactions] = await Promise.all([
+        api('catalog_totals?catalog_nr=eq.' + encodeURIComponent(target)),
+        api('transactions?catalog_nr=eq.' + encodeURIComponent(target) + '&order=datum.desc&limit=10000')
+      ]);
+      if (!summaries || summaries.length === 0) { showInspectorError('No data for "' + target + '".'); return; }
+      renderInspector(summaries[0], transactions || []);
+
+      // Variant detection runs in background after main render (only for non-merged catalogs)
+      detectVariants(target).then(({ base, variants }) => {
+        if (target === inspectorCurrentCatalog && inspectorMergedCatalogs.length === 0 && shouldShowVariantBanner(target, variants)) {
+          $('variant-area').innerHTML = renderVariantBanner(target, variants);
+        }
+      });
+    }
+  } catch (e) {
+    showInspectorError(e.message || String(e));
+  } finally {
+    $('inspector-loading').classList.add('hidden');
+  }
+}
+
+function buildMergedSummary(summaries, displayName) {
+  const base = inspectorMergeBase || [...inspectorMergedCatalogs].sort((a,b) => a.length - b.length || a.localeCompare(b))[0];
+  const merged = {
+    catalog_nr: base,
+    first_receipt_date: summaries.map(s => s.first_receipt_date).filter(Boolean).sort()[0],
+    last_receipt_date: summaries.map(s => s.last_receipt_date).filter(Boolean).sort().pop(),
+    last_sale_date: summaries.map(s => s.last_sale_date).filter(Boolean).sort().pop(),
+    receipt_count: summaries.reduce((s, x) => s + (x.receipt_count || 0), 0),
+    total_received: summaries.reduce((s, x) => s + (x.total_received || 0), 0),
+    total_sold: summaries.reduce((s, x) => s + (x.total_sold || 0), 0),
+    sold_last_12m: summaries.reduce((s, x) => s + (x.sold_last_12m || 0), 0),
+    sold_since_last_receipt: null
+  };
+  return merged;
+}
+
+function showInspectorError(msg) {
+  $('inspector-error').textContent = msg;
+  $('inspector-error').classList.remove('hidden');
+}
+
+function renderInspector(summary, transactions) {
+  const parseD = s => {
+    if (!s) return null;
+    const dt = new Date(String(s).slice(0,10) + 'T00:00:00Z');
+    return isNaN(dt) ? null : dt;
+  };
+
+  const receipts = transactions.filter(t => t.trans_type === 'ontvangsten')
+    .sort((a,b) => (parseD(b.datum)||0) - (parseD(a.datum)||0));
+  const sales = transactions.filter(t => t.trans_type === 'verkoop');
+  const mutations = transactions.filter(t => t.trans_type === 'voorraadmutatie');
+
+  const lastReceivalDate = summary.last_receipt_date;
+  // Bundle = all receivals from last_receipt_date onward (DB groups receivals within 6 weeks)
+  const cutoff = parseD(lastReceivalDate);
+  const bundledReceivals = cutoff ? receipts.filter(r => { const d = parseD(r.datum); return d && d >= cutoff; }) : [];
+  const lastReceivalUnits = Number(summary.last_receival_units);   // bundled total from DB
+  const bundleCount = bundledReceivals.length;
+  const mostRecentBundleDate = bundledReceivals[0]?.datum || lastReceivalDate;
+
+  const salesSince = cutoff ? sales.filter(s => { const d = parseD(s.datum); return d && d >= cutoff; }) : [];
+  const mutationsSince = cutoff ? mutations.filter(m => { const d = parseD(m.datum); return d && d >= cutoff; }) : [];
+
+  const salesSinceTotal = summary.sold_since_last_receipt != null
+    ? Number(summary.sold_since_last_receipt)
+    : salesSince.reduce((s, x) => s + -Number(x.aantal), 0);  // net (sales - returns)
+  const mutationsSinceTotal = mutationsSince.reduce((s, x) => s + Number(x.aantal), 0);
+
+  const isMerged = inspectorMergedCatalogs.length >= 2;
+  const mergedBanner = isMerged ? `
+    <div class="merge-active-banner">
+      <div>📚 Merged view${inspectorMergeBase ? ` (base: <strong>${inspectorMergeBase}</strong>)` : ''} — <strong>${inspectorMergedCatalogs.length} catalogs</strong>: ${inspectorMergedCatalogs.join(', ')}</div>
+      <button class="btn-decline" onclick="unmergeCurrent()">Unmerge</button>
+    </div>
+  ` : '';
+
+  // Bundle date display: 1 receival → single date; multiple → range + count
+  function bundleDateLine() {
+    if (bundleCount <= 1) {
+      return fmtDate(lastReceivalDate) + ' · ' + daysSince(lastReceivalDate) + ' days ago';
+    }
+    return `${fmtDate(lastReceivalDate)} → ${fmtDate(mostRecentBundleDate)} · ${bundleCount} pressings bundled · ${daysSince(mostRecentBundleDate)} days since most recent`;
+  }
+  function bundleBreakdown() {
+    if (bundleCount <= 1) return '';
+    const parts = bundledReceivals
+      .slice().reverse()  // oldest first
+      .map(r => `${fmt(r.aantal)} on ${fmtDate(r.datum)}`)
+      .join(' + ');
+    return `<div style="font-size:12px;color:var(--ink3);margin-top:4px">(${parts})</div>`;
+  }
+
+  let html = mergedBanner + `
+    <div class="catalog-header">
+      <div>
+        <div class="caps">Catalog</div>
+        <div class="catalog-title">${escapeHtml(summary.catalog_nr)}</div>
+      </div>
+      <div class="meta-row">
+        <div>
+          <div class="caps">First receival</div>
+          <div class="meta-val">${fmtDate(summary.first_receipt_date)}</div>
+        </div>
+        <div>
+          <div class="caps">Last receival</div>
+          <div class="meta-val">${fmtDate(summary.last_receipt_date)}</div>
+          ${summary.last_receipt_date ? `<div class="meta-sub">${daysSince(summary.last_receipt_date)} days ago</div>` : ''}
+        </div>
+        <div>
+          <div class="caps">Last sale</div>
+          <div class="meta-val">${fmtDate(summary.last_sale_date)}</div>
+          ${summary.last_sale_date ? `<div class="meta-sub">${daysSince(summary.last_sale_date)} days ago</div>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+
+  html += metricCard({
+    label: 'Total Received',
+    value: fmt(summary.total_received),
+    sublabel: 'Across ' + (summary.receipt_count || 0) + ' receival' + (summary.receipt_count === 1 ? '' : 's'),
+    content: renderReceipts(receipts),
+  });
+  html += metricCard({
+    label: 'Total Sold',
+    value: fmt(summary.total_sold),
+    sublabel: 'Lifetime sales · last 12m: ' + fmt(summary.sold_last_12m),
+    content: renderMonthlySales(sales),
+  });
+  const banner3 = lastReceivalDate
+    ? `<div class="context-banner"><strong>${fmt(salesSinceTotal)}</strong> sold of <strong>${fmt(lastReceivalUnits)}</strong> received ${bundleCount > 1 ? `across ${bundleCount} pressings (${fmtDate(lastReceivalDate)} → ${fmtDate(mostRecentBundleDate)})` : `on ${fmtDate(lastReceivalDate)}`}</div>` : '';
+  html += metricCard({
+    label: 'Sales Since Last Receival',
+    value: fmt(salesSinceTotal),
+    accent: true,
+    secondary: lastReceivalUnits != null ? `From the <strong>${fmt(lastReceivalUnits)}</strong> received${bundleCount > 1 ? ` (${bundleCount} pressings)` : ''}${bundleBreakdown()}` : null,
+    sublabel: lastReceivalDate ? bundleDateLine() : 'No receival recorded',
+    content: banner3 + (lastReceivalDate ? renderSalesSinceReceival(salesSince, lastReceivalDate) : '<div class="empty">No receival recorded.</div>'),
+  });
+  const banner4 = lastReceivalDate
+    ? `<div class="context-banner"><strong>${fmtSigned(mutationsSinceTotal)}</strong> mutated of <strong>${fmt(lastReceivalUnits)}</strong> received ${bundleCount > 1 ? `across ${bundleCount} pressings` : `on ${fmtDate(lastReceivalDate)}`}</div>` : '';
+  html += metricCard({
+    label: 'Voorraad Mutations Since Last Receival',
+    value: fmtSigned(mutationsSinceTotal),
+    sublabel: lastReceivalDate ? 'Stock corrections since ' + fmtDate(lastReceivalDate) : 'No receival recorded',
+    content: banner4 + (mutationsSince.length ? renderMonthlyMutations(mutationsSince) : '<div class="empty">No voorraad mutations since last receival.</div>'),
+  });
+
+  $('inspector-content').innerHTML = html;
+}
+
+function metricCard({ label, value, sublabel, content, accent, secondary }) {
+  return `
+    <details class="metric">
+      <summary>
+        <div>
+          <div class="caps">${escapeHtml(label)}</div>
+          <div class="big-num ${accent ? 'accent' : ''} num">${escapeHtml(value)}</div>
+          ${secondary ? `<div class="big-num-secondary num">${secondary}</div>` : ''}
+          ${sublabel ? `<div class="sub">${escapeHtml(sublabel)}</div>` : ''}
+        </div>
+        <div class="chev">›</div>
+      </summary>
+      <div class="metric-content">${content}</div>
+    </details>
+  `;
+}
+
+function renderReceipts(receipts) {
+  if (!receipts.length) return `<div class="empty">No receival events recorded.</div>`;
+  const total = receipts.reduce((s,r) => s + Number(r.aantal), 0);
+  return `
+    <div class="tbl-head grid-3">
+      <div>Supplier</div><div class="right">Date</div><div class="right">Units</div>
+    </div>
+    ${receipts.map(r => `
+      <div class="tbl-row grid-3">
+        <div>${escapeHtml(r.bedrijfsnaam || '—')}</div>
+        <div class="right">${fmtDate(r.datum)}</div>
+        <div class="right strong num">${fmtSigned(r.aantal)}</div>
+      </div>
+    `).join('')}
+    <div class="tbl-total grid-3">
+      <div class="caps">${receipts.length} receivals</div><div></div>
+      <div class="right num accent">${fmtSigned(total)}</div>
+    </div>
+  `;
+}
+
+function renderMonthlySales(sales) {
+  if (!sales.length) return `<div class="empty">No sales recorded.</div>`;
+  const monthMap = new Map();
+  for (const s of sales) {
+    const k = monthKey(s.datum);
+    if (!monthMap.has(k)) monthMap.set(k, { key:k, units:0, rows:[] });
+    const e = monthMap.get(k);
+    e.units += -Number(s.aantal);  // negate so sales add, returns subtract
+    e.rows.push(s);
+  }
+  const months = [...monthMap.values()].sort((a,b) => a.key.localeCompare(b.key));
+  const total = months.reduce((s,m) => s + m.units, 0);
+  return `
+    <div class="tbl-head grid-3"><div>Month</div><div class="right">Transactions</div><div class="right">Net units sold</div></div>
+    ${months.map(m => renderMonthRow(m, 'sales')).join('')}
+    <div class="tbl-total grid-3"><div class="caps">${months.length} month${months.length===1?'':'s'}</div><div></div><div class="right num ${total>=0?'accent':'neg'}">${fmtSigned(total)}</div></div>
+  `;
+}
+
+// Sales Since Receival: fills every month from receival to today (including zero months), newest first
+function renderSalesSinceReceival(sales, cutoffDate) {
+  const monthMap = new Map();
+  for (const s of sales) {
+    const k = monthKey(s.datum);
+    if (!monthMap.has(k)) monthMap.set(k, { key:k, units:0, rows:[] });
+    const e = monthMap.get(k);
+    e.units += -Number(s.aantal);  // net (sales - returns)
+    e.rows.push(s);
+  }
+  if (cutoffDate) {
+    const start = new Date(cutoffDate);
+    const today = new Date();
+    let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+    const endMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    while (cur <= endMonth) {
+      const k = cur.getFullYear() + '-' + String(cur.getMonth()+1).padStart(2,'0');
+      if (!monthMap.has(k)) monthMap.set(k, { key:k, units:0, rows:[] });
+      cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+    }
+  }
+  const months = [...monthMap.values()].sort((a,b) => b.key.localeCompare(a.key));
+  const total = months.reduce((s,m) => s + m.units, 0);
+  return `
+    <div class="tbl-head grid-3"><div>Month</div><div class="right">Transactions</div><div class="right">Net units sold</div></div>
+    ${months.map(m => renderMonthRow(m, 'sales')).join('')}
+    <div class="tbl-total grid-3"><div class="caps">${months.length} month${months.length===1?'':'s'}</div><div></div><div class="right num ${total>=0?'accent':'neg'}">${fmtSigned(total)}</div></div>
+  `;
+}
+
+function renderMonthlyMutations(mutations) {
+  if (!mutations.length) return `<div class="empty">No voorraad mutations recorded.</div>`;
+  const monthMap = new Map();
+  for (const m of mutations) {
+    const k = monthKey(m.datum);
+    if (!monthMap.has(k)) monthMap.set(k, { key:k, units:0, rows:[] });
+    const e = monthMap.get(k);
+    e.units += Number(m.aantal);
+    e.rows.push(m);
+  }
+  const months = [...monthMap.values()].sort((a,b) => a.key.localeCompare(b.key));
+  const total = months.reduce((s,m) => s + m.units, 0);
+  return `
+    <div class="tbl-head grid-3"><div>Month</div><div class="right">Events</div><div class="right">Net mutation</div></div>
+    ${months.map(m => renderMonthRow(m, 'voorraad')).join('')}
+    <div class="tbl-total grid-3"><div class="caps">${months.length} month${months.length===1?'':'s'}</div><div></div><div class="right num ${total>=0?'pos':'neg'}">${fmtSigned(total)}</div></div>
+  `;
+}
+
+function renderMonthRow(month, mode) {
+  // mode: 'sales' (returns subtract via -aantal) or 'voorraad' (signed aantal)
+  // Empty month (no transactions) - render flat row, no expand
+  if (month.rows.length === 0) {
+    return `
+      <div class="month-row" style="opacity: 0.55;">
+        <div style="display:grid;grid-template-columns:1fr 140px 140px;gap:16px;align-items:center;padding:12px 24px;">
+          <div style="padding-left:20px"><strong>${escapeHtml(monthLabel(month.key))}</strong></div>
+          <div class="right ink3">—</div>
+          <div class="right ink3 num">0</div>
+        </div>
+      </div>
+    `;
+  }
+  const custMap = new Map();
+  for (const r of month.rows) {
+    const c = r.bedrijfsnaam || '(none)';
+    if (!custMap.has(c)) custMap.set(c, { customer:c, units:0, txns:[] });
+    const e = custMap.get(c);
+    e.units += mode === 'sales' ? -Number(r.aantal) : Number(r.aantal);
+    e.txns.push(r);
+  }
+  const customers = [...custMap.values()].sort((a,b) => Math.abs(b.units) - Math.abs(a.units));
+  const cls = month.units >= 0 ? 'pos' : 'neg';
+  const display = fmtSigned(month.units);
+  return `
+    <details class="month-row">
+      <summary>
+        <div><span class="chev">›</span> <strong>${escapeHtml(monthLabel(month.key))}</strong></div>
+        <div class="right ink2">${month.rows.length}</div>
+        <div class="right strong num ${cls}">${display}</div>
+      </summary>
+      <div class="customer-list">
+        <div class="customer-head">
+          <div>${mode === 'voorraad' ? 'Source / reason' : 'Customer'}</div>
+          <div class="right">Events</div>
+          <div class="right">Net</div>
+        </div>
+        ${customers.map(c => renderCustomerRow(c, mode)).join('')}
+      </div>
+    </details>
+  `;
+}
+
+function renderCustomerRow(customer, mode) {
+  const display = fmtSigned(customer.units);
+  const cls = customer.units >= 0 ? 'pos' : 'neg';
+  return `
+    <details class="customer-row">
+      <summary>
+        <div><span class="chev">›</span> ${escapeHtml(customer.customer)}</div>
+        <div class="right ink2">${customer.txns.length}</div>
+        <div class="right strong num ${cls}">${display}</div>
+      </summary>
+      <div class="txn-list">
+        ${customer.txns.sort((a,b) => new Date(a.datum) - new Date(b.datum)).map(t => {
+          const raw = Number(t.aantal);
+          // For sales: show -aantal (sale becomes positive, return becomes negative)
+          // For voorraad: show signed aantal
+          const display = mode === 'sales' ? fmtSigned(-raw) : fmtSigned(raw);
+          const v = mode === 'sales' ? -raw : raw;
+          const qCls = v >= 0 ? 'pos' : 'neg';
+          return `
+            <div class="txn-line">
+              <div class="ink2 strong">${fmtDate(t.datum)}</div>
+              <div class="ink3">${escapeHtml(t.art_grp || '')}</div>
+              <div class="ink3"></div>
+              <div class="right num strong ${qCls}">${display}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </details>
+  `;
+}
+
+// ============ REPORTS ============
+let reportsTab = 'received';      // received | sold
+let reportsPeriod = 'week';       // week | month | year | supplier
+let reportsCache = {};             // key -> data
+let reportsRawData = [];           // currently displayed dataset
+
+// Sat → Fri week label
+// Week 1 of year Y = week containing Jan 1 of Y
+function weekLabel(weekStartIso) {
+  const ws = new Date(weekStartIso + 'T00:00:00Z');
+  const we = new Date(ws); we.setUTCDate(we.getUTCDate() + 6);
+  const yearY = we.getUTCFullYear();
+  const jan1 = new Date(Date.UTC(yearY, 0, 1));
+  const w1Start = new Date(jan1);
+  // dow: 0=Sun, 6=Sat. We want previous Saturday: subtract (dow+1)%7 days
+  w1Start.setUTCDate(w1Start.getUTCDate() - ((jan1.getUTCDay() + 1) % 7));
+  const diffDays = Math.round((ws - w1Start) / 86400000);
+  const weekNum = Math.floor(diffDays / 7) + 1;
+  return { weekNum, year: yearY, label: `Week ${weekNum} ${yearY}` };
+}
+
+const DOW_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function fmtDayDate(iso) {
+  const d = new Date(iso + 'T00:00:00Z');
+  return `${DOW_SHORT[d.getUTCDay()]} ${d.getUTCDate()} ${d.toLocaleString('en-GB', { month: 'short', timeZone: 'UTC' })}`;
+}
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function monthLabelFromIso(iso) {
+  const d = new Date(iso + 'T00:00:00Z');
+  return `${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+async function loadReports() {
+  const key = `${reportsTab}_${reportsPeriod}`;
+  const $tbl = $('reports-table');
+  $tbl.innerHTML = '<div class="loading-state">Loading…</div>';
+  $('reports-summary').innerHTML = '';
+
+  if (reportsCache[key]) {
+    reportsRawData = reportsCache[key];
+    renderReports();
+    return;
+  }
+
+  let endpoint;
+  if (reportsTab === 'received') {
+    if (reportsPeriod === 'week') endpoint = 'receipts_weekly';
+    else if (reportsPeriod === 'month') endpoint = 'receipts_monthly';
+    else if (reportsPeriod === 'year') endpoint = 'receipts_yearly';
+    else endpoint = 'receipts_by_supplier';
+  } else {
+    if (reportsPeriod === 'week') endpoint = 'sales_weekly';
+    else if (reportsPeriod === 'month') endpoint = 'sales_monthly';
+    else if (reportsPeriod === 'year') endpoint = 'sales_yearly';
+    else { // supplier not available for sales
+      $tbl.innerHTML = '<div class="empty"><div class="empty-icon">—</div>Supplier breakdown is only available for received items.</div>';
+      return;
+    }
+  }
+
+  try {
+    const data = await api(`${endpoint}?select=*&limit=2000`);
+    reportsCache[key] = data;
+    reportsRawData = data;
+    renderReports();
+  } catch (e) {
+    $tbl.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>Load failed: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderReports() {
+  const search = ($('reports-search').value || '').trim().toLowerCase();
+  let rows = reportsRawData;
+  if (search) {
+    if (reportsPeriod === 'supplier') rows = rows.filter(r => (r.supplier || '').toLowerCase().includes(search));
+    else rows = rows.filter(r => {
+      const label = reportsPeriod === 'week' ? weekLabel(r.week_start).label
+                  : reportsPeriod === 'month' ? monthLabelFromIso(r.month_start)
+                  : String(r.year);
+      return label.toLowerCase().includes(search);
+    });
+  }
+
+  // Summary stats
+  const totalUnits = rows.reduce((s, r) => s + Number(r.units || 0), 0);
+  const totalTxns = rows.reduce((s, r) => s + Number(r.txn_count || 0), 0);
+  const avg = rows.length > 0 ? Math.round(totalUnits / rows.length) : 0;
+  const periodName = reportsPeriod === 'supplier' ? 'supplier' : reportsPeriod;
+  const noun = reportsTab === 'received' ? 'received' : 'sold';
+
+  $('reports-summary').innerHTML = `
+    <div class="stat">
+      <div class="stat-label">Total ${noun}</div>
+      <div class="stat-value">${fmt(totalUnits)}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Transactions</div>
+      <div class="stat-value">${fmt(totalTxns)}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Avg per ${periodName}</div>
+      <div class="stat-value">${fmt(avg)}</div>
+    </div>
+  `;
+
+  // Max for bar scaling
+  const maxUnits = Math.max(1, ...rows.map(r => Number(r.units || 0)));
+  const $tbl = $('reports-table');
+
+  if (rows.length === 0) {
+    $tbl.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>No data.</div>';
+    return;
+  }
+
+  if (reportsPeriod === 'supplier') {
+    $tbl.innerHTML = rows.map(r => {
+      const pct = (Number(r.units) / maxUnits) * 100;
+      return `
+        <div class="report-row" style="grid-template-columns: 1fr 120px 100px 200px;">
+          <div>
+            <div class="period-label">${escapeHtml(r.supplier)}</div>
+            <div class="period-sub">${fmt(r.titles)} titles · first: ${fmtDate(r.first_receipt)} · last: ${fmtDate(r.last_receipt)}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="num-cell">${fmt(r.units)}</div>
+            <div class="num-sub">units received</div>
+          </div>
+          <div style="text-align:right">
+            <div class="num-cell">${fmt(r.txn_count)}</div>
+            <div class="num-sub">events</div>
+          </div>
+          <div>
+            <div class="report-bar"><div class="report-bar-fill" style="width:${pct}%"></div></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    return;
+  }
+
+  // Week / Month / Year
+  $tbl.innerHTML = rows.map(r => {
+    let label, sub;
+    if (reportsPeriod === 'week') {
+      const wk = weekLabel(r.week_start);
+      const endDate = new Date(r.week_start + 'T00:00:00Z');
+      endDate.setUTCDate(endDate.getUTCDate() + 6);
+      const endIso = endDate.toISOString().slice(0,10);
+      label = wk.label;
+      sub = `${fmtDayDate(r.week_start)} → ${fmtDayDate(endIso)}`;
+    } else if (reportsPeriod === 'month') {
+      label = monthLabelFromIso(r.month_start);
+      sub = '';
+    } else {
+      label = String(r.year);
+      sub = '';
+    }
+    const pct = (Number(r.units) / maxUnits) * 100;
+    return `
+      <div class="report-row" style="grid-template-columns: 1fr 120px 100px 200px;">
+        <div>
+          <div class="period-label">${label}</div>
+          ${sub ? `<div class="period-sub">${sub}</div>` : ''}
+        </div>
+        <div style="text-align:right">
+          <div class="num-cell">${fmt(r.units)}</div>
+          <div class="num-sub">units ${noun}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="num-cell">${fmt(r.txn_count)}</div>
+          <div class="num-sub">events</div>
+        </div>
+        <div>
+          <div class="report-bar"><div class="report-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============ RETURNS ============
+let returnsCustomers = [];
+let returnsRowsParsed = [];
+
+async function loadReturnsCustomers() {
+  if (returnsCustomers.length > 0) return; // cached
+  $('returns-shop-hint').textContent = 'Loading customer list…';
+  try {
+    // Get distinct customers from sales. Use 'select=bedrijfsnaam' grouped (PostgREST distinct via group)
+    const rows = await fetchAllPaginated(`transactions?select=bedrijfsnaam&trans_type=eq.verkoop&bedrijfsnaam=not.is.null&order=bedrijfsnaam.asc`);
+    const set = new Set();
+    rows.forEach(r => { if (r.bedrijfsnaam && r.bedrijfsnaam.trim()) set.add(r.bedrijfsnaam.trim()); });
+    returnsCustomers = [...set].sort();
+    const dl = $('returns-shop-list');
+    dl.innerHTML = returnsCustomers.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+    $('returns-shop-hint').textContent = `${returnsCustomers.length} customers in sales history. Start typing for autocomplete.`;
+  } catch (e) {
+    $('returns-shop-hint').textContent = `Couldn't load customer list: ${e.message}`;
+  }
+}
+
+function handleReturnsFile(file) {
+  if (!file) return;
+  if (!file.name.match(/\.xlsx?$/i)) {
+    toast('Please upload an .xlsx or .xls file');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = new Uint8Array(ev.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      // Normalize: pull Quantity / Catalog / Artist / Title / Format (case-insensitive header match)
+      const normalize = (row) => {
+        const out = {};
+        for (const k of Object.keys(row)) {
+          const lk = k.toLowerCase().trim();
+          if (lk === 'quantity' || lk === 'qty') out.quantity = row[k];
+          else if (lk === 'catalog' || lk === 'catalogue' || lk === 'cat' || lk === 'cat#' || lk === 'cat nr') out.catalog = row[k];
+          else if (lk === 'artist') out.artist = row[k];
+          else if (lk === 'title') out.title = row[k];
+          else if (lk === 'format') out.format = row[k];
+        }
+        return out;
+      };
+      returnsRowsParsed = rows.map(normalize).filter(r => r.catalog || r.title || r.artist);
+      $('returns-dropzone-label').textContent = `📄 ${file.name} — ${returnsRowsParsed.length} rows ready`;
+      $('returns-process').disabled = returnsRowsParsed.length === 0;
+    } catch (e) {
+      toast('Could not parse file: ' + e.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function processReturns() {
+  const shop = $('returns-shop').value.trim();
+  const months = parseInt($('returns-months').value, 10) || 6;
+  if (!shop) { toast('Enter a customer name'); return; }
+  if (returnsRowsParsed.length === 0) { toast('Upload a file first'); return; }
+
+  const resultsEl = $('returns-results');
+  resultsEl.classList.remove('hidden');
+  resultsEl.innerHTML = '<div class="loading-state">Looking up sales history…</div>';
+
+  // Date cutoff
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - months);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  // Catalogs to query
+  const catalogs = [...new Set(returnsRowsParsed.map(r => String(r.catalog || '').trim().toUpperCase()).filter(Boolean))];
+
+  // Fetch all sales for this customer (ILIKE match) for catalogs in question
+  // Use one big query: trans_type=verkoop AND bedrijfsnaam ILIKE %shop% AND catalog_nr IN (...)
+  // PostgREST: bedrijfsnaam=ilike.*shop* (uses * as wildcard)
+  const catList = catalogs.map(c => `"${c}"`).join(',');
+  let allSales = [];
+  try {
+    allSales = await fetchAllPaginated(
+      `transactions?trans_type=eq.verkoop&bedrijfsnaam=ilike.*${encodeURIComponent(shop)}*&catalog_nr=in.(${catList})&select=catalog_nr,datum,aantal,bedrijfsnaam&order=datum.desc`
+    );
+  } catch (e) {
+    resultsEl.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>Lookup failed: ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+
+  // Group sales by catalog
+  const salesByCatalog = {};
+  for (const s of allSales) {
+    const cat = (s.catalog_nr || '').toUpperCase();
+    if (!salesByCatalog[cat]) salesByCatalog[cat] = [];
+    salesByCatalog[cat].push(s);
+  }
+
+  // Build results
+  const results = returnsRowsParsed.map(r => {
+    const cat = String(r.catalog || '').trim().toUpperCase();
+    const qtyReq = Number(r.quantity) || 0;
+    const sales = salesByCatalog[cat] || [];
+
+    if (!cat || sales.length === 0) {
+      return {
+        ...r, catalog: cat, qtyReq,
+        status: 'fail',
+        statusText: cat ? `Catalog "${cat}" not found in any sales to "${shop}"` : `Invalid/missing catalog`,
+        netInWindow: 0, lastSaleDate: null
+      };
+    }
+
+    const lastSaleDate = sales[0].datum; // already sorted desc
+    // Net within window: -SUM(aantal) for sales where datum >= cutoff
+    const inWindow = sales.filter(s => s.datum >= cutoffStr);
+    const netInWindow = inWindow.reduce((sum, s) => sum + -Number(s.aantal), 0);
+
+    if (netInWindow <= 0) {
+      // No sales within window — find how far past
+      const monthsSinceLastSale = Math.floor((Date.now() - new Date(lastSaleDate).getTime()) / (30 * 86400000));
+      const monthsTooLate = monthsSinceLastSale - months;
+      return {
+        ...r, catalog: cat, qtyReq,
+        status: 'fail',
+        statusText: `Last bought ${fmtDate(lastSaleDate)} (${monthsSinceLastSale} mo ago) — ${monthsTooLate} mo past the ${months}-mo return window`,
+        netInWindow, lastSaleDate
+      };
+    }
+
+    if (netInWindow < qtyReq) {
+      return {
+        ...r, catalog: cat, qtyReq,
+        status: 'warn',
+        statusText: `Only ${netInWindow} bought in last ${months} mo (last on ${fmtDate(lastSaleDate)}) — return request is ${qtyReq}`,
+        netInWindow, lastSaleDate
+      };
+    }
+
+    return {
+      ...r, catalog: cat, qtyReq,
+      status: 'ok',
+      statusText: `${netInWindow} bought in last ${months} mo (last on ${fmtDate(lastSaleDate)})`,
+      netInWindow, lastSaleDate
+    };
+  });
+
+  // Summary
+  const okCount = results.filter(r => r.status === 'ok').length;
+  const warnCount = results.filter(r => r.status === 'warn').length;
+  const failCount = results.filter(r => r.status === 'fail').length;
+  const okQty = results.filter(r => r.status === 'ok').reduce((s, r) => s + r.qtyReq, 0);
+  const partialQty = results.filter(r => r.status === 'warn').reduce((s, r) => s + Math.min(r.qtyReq, r.netInWindow), 0);
+
+  const iconFor = (s) => s === 'ok' ? '✅' : s === 'warn' ? '⚠️' : '❌';
+
+  resultsEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+      <div class="stat"><div class="stat-label">Approved</div><div class="stat-value" style="color:var(--ok)">${okCount}</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">${okQty} units</div></div>
+      <div class="stat"><div class="stat-label">Partial</div><div class="stat-value" style="color:var(--warn)">${warnCount}</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">${partialQty} units accepted</div></div>
+      <div class="stat"><div class="stat-label">Rejected</div><div class="stat-value" style="color:var(--danger)">${failCount}</div></div>
+      <div class="stat"><div class="stat-label">Shop</div><div style="font-size:14px;font-weight:700;margin-top:6px">${escapeHtml(shop)}</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">${months}-month window</div></div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3 style="font-size:14px;font-weight:700">${results.length} items in return request</h3>
+      <button class="btn" onclick="exportReturnsResults()">📥 Export results</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:28px 1fr 90px 90px 200px;gap:12px;padding:6px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink3)">
+      <div></div><div>Item</div><div style="text-align:right">Request</div><div style="text-align:right">In window</div><div>Status</div>
+    </div>
+
+    ${results.map(r => `
+      <div class="returns-row ${r.status}">
+        <div class="returns-icon">${iconFor(r.status)}</div>
+        <div>
+          <div class="returns-cat">${escapeHtml(r.catalog || '(no catalog)')}</div>
+          <div class="returns-meta">${escapeHtml((r.artist || '') + (r.title ? ' — ' + r.title : ''))}</div>
+        </div>
+        <div class="returns-num">${r.qtyReq}</div>
+        <div class="returns-num">${r.netInWindow}</div>
+        <div class="returns-status ${r.status}">${escapeHtml(r.statusText)}</div>
+      </div>
+    `).join('')}
+  `;
+
+  window._returnsResults = results;
+  window._returnsShop = shop;
+  window._returnsMonths = months;
+}
+
+function exportReturnsResults() {
+  const results = window._returnsResults || [];
+  if (results.length === 0) return;
+  const headers = ['Status', 'Catalog', 'Artist', 'Title', 'Format', 'Qty requested', 'Qty in window', 'Last sale date', 'Notes'];
+  const rows = results.map(r => [
+    r.status.toUpperCase(),
+    r.catalog || '',
+    r.artist || '',
+    r.title || '',
+    r.format || '',
+    r.qtyReq,
+    r.netInWindow,
+    r.lastSaleDate ? fmtDate(r.lastSaleDate) : '',
+    r.statusText
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Return Review');
+  const fileName = `Return_review_${(window._returnsShop || 'customer').replace(/\W+/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+}
+
+// ============ EVENT WIRING ============
+$('back-btn').onclick = () => {
+  // Back from inspector → return to whichever top view we were in
+  if (currentTopView === 'reports') showReports();
+  else showWatchlist();
+};
+$('logo-home').onclick = showWatchlist;
+$('searchBtn').onclick = () => {
+  const v = $('catInput').value.trim().toUpperCase();
+  if (v) showInspector(v);
+};
+$('catInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const v = e.target.value.trim().toUpperCase();
+    if (v) showInspector(v);
+  }
+});
+
+// Top-level nav
+document.querySelectorAll('.nav-btn').forEach(b => b.onclick = () => {
+  if (b.dataset.view === 'watchlist') showWatchlist();
+  else if (b.dataset.view === 'reports') showReports();
+  else if (b.dataset.view === 'returns') showReturns();
+});
+
+// Returns wiring
+const dz = $('returns-dropzone');
+const fileInput = $('returns-file');
+if (dz && fileInput) {
+  dz.onclick = () => fileInput.click();
+  fileInput.onchange = (e) => { if (e.target.files[0]) handleReturnsFile(e.target.files[0]); };
+  ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('dragging'); }));
+  ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('dragging'); }));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    if (e.dataTransfer?.files[0]) handleReturnsFile(e.dataTransfer.files[0]);
+  });
+  $('returns-process').onclick = processReturns;
+}
+
+// Reports tab + period switching
+document.querySelectorAll('[data-rtab]').forEach(t => t.onclick = () => {
+  document.querySelectorAll('[data-rtab]').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  reportsTab = t.dataset.rtab;
+  // Hide supplier btn for sold tab
+  $('period-supplier').style.display = reportsTab === 'received' ? '' : 'none';
+  if (reportsTab === 'sold' && reportsPeriod === 'supplier') reportsPeriod = 'week';
+  document.querySelectorAll('.period-btn').forEach(x => x.classList.toggle('active', x.dataset.period === reportsPeriod));
+  loadReports();
+});
+document.querySelectorAll('.period-btn').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.period-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  reportsPeriod = b.dataset.period;
+  loadReports();
+});
+$('reports-search').addEventListener('input', () => renderReports());
+
+document.querySelectorAll('#tabs-container .tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('#tabs-container .tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  currentTab = t.dataset.tab;
+  displayLimit = 200;
+  renderList();
+});
+
+['search','filterTier','filterLabel','sortBy'].forEach(id => {
+  $(id).addEventListener('input', () => { displayLimit = 200; renderList(); });
+});
+
+// Enter key in search jumps to inspector
+$('search').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const v = e.target.value.trim().toUpperCase();
+    if (v) showInspector(v);
+  }
+});
+$('searchInspect').onclick = () => {
+  const v = $('search').value.trim().toUpperCase();
+  if (!v) { toast('Type a catalog number first'); return; }
+  showInspector(v);
+};
+$('manualAdd').onclick = manualAddCatalog;
+
+$('loadMore').onclick = () => { displayLimit += 200; renderList(); };
+
+loadWatchlist();
+</script>
+
+</body>
+</html>
